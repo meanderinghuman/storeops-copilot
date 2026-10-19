@@ -44,15 +44,19 @@ def run_agent(
     user_message: str,
     tool_names: list[str] = TRAINING_TOOLS,
     max_rounds: int = 4,
+    history: list[dict] | None = None,
 ) -> dict:
     """One manager message -> full conversation with executed tool calls.
 
+    `history` is earlier turns (after the system prompt) for follow-up requests; only calls made
+    in response to the new message are recorded in "calls".
     Returns {"messages", "calls", "finish", "rounds", "seconds"}; finish is "answer" when the
     model ended with a plain reply, "max_rounds" when it was still calling tools at the cap.
     """
     specs = tool_specs(tool_names)
     messages = [
         {"role": "system", "content": system_prompt(store_id, tools.as_of)},
+        *(history or []),
         {"role": "user", "content": user_message},
     ]
     calls, rounds, start = [], 0, time.monotonic()
