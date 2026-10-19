@@ -17,6 +17,7 @@ data/*.db-*
 data/cache/
 data/gen/
 data/eval/
+data/kaggle_upload/
 models/
 *.gguf
 *.safetensors
