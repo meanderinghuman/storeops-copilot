@@ -15,6 +15,17 @@ from pathlib import Path
 
 CACHE_PATH = Path(__file__).with_name("product_names.json")
 
+# Models sometimes emit typographic dashes/spaces ("pre\u2011treat"); names must be plain ASCII.
+_ASCII = str.maketrans(
+    {c: "-" for c in "\u2010\u2011\u2012\u2013\u2014\u2212"}
+    | {c: " " for c in "\u00a0\u2009\u202f"}
+)
+
+
+def clean_name(name: str) -> str:
+    return " ".join(name.translate(_ASCII).split())
+
+
 DEPT_THEMES = {
     "FOODS_1": "snacks, breakfast and baking",
     "FOODS_2": "dairy, frozen and refrigerated",
@@ -203,7 +214,7 @@ def offline_names(dept_id: str, item_ids: list[str], seed: int = 42) -> dict[str
 def load_cache(path: Path = CACHE_PATH) -> dict[str, str]:
     if not path.exists():
         return {}
-    return json.loads(path.read_text())["names"]
+    return {k: clean_name(v) for k, v in json.loads(path.read_text())["names"].items()}
 
 
 def save_cache(names: dict[str, str], path: Path = CACHE_PATH) -> None:
@@ -249,7 +260,7 @@ def teacher_names(
             except ValueError:
                 continue
             for item_id in batch:
-                name = str(proposed.get(item_id, "")).strip()
+                name = clean_name(str(proposed.get(item_id, "")))
                 if 2 <= len(name) <= 60 and name.lower() not in taken_lower:
                     names[item_id] = name
                     taken_lower.add(name.lower())
