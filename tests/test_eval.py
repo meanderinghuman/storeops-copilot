@@ -14,6 +14,7 @@ from store.tools import HELDOUT_TOOLS, TRAINING_TOOLS, StoreTools
 ALL_TOOLS = TRAINING_TOOLS + HELDOUT_TOOLS
 ITEM, STORE = "FOODS_3_003", "CA_1"
 REAL_DB, TESTSET = Path("data/store.db"), Path("eval/testset.jsonl")
+HARD = Path("eval/testset_hard.jsonl")
 
 
 def scenario(category, expected, split="seen", item_id=ITEM, query="q"):
@@ -34,9 +35,8 @@ def tools(db):
 
 def play(sc, tools, chat=None):
     reset_writes(tools.db_path)
-    return run_agent(
-        chat or oracle_chat(sc, tools), tools, sc["store_id"], sc["query"], ALL_TOOLS, 6
-    )
+    chat = chat or oracle_chat(sc, tools)
+    return run_agent(chat, tools, sc["store_id"], sc["query"], ALL_TOOLS, 6, sc.get("history"))
 
 
 def fixture_scenarios(tools):
@@ -154,3 +154,20 @@ def test_number_present_and_bootstrap():
     assert not number_present(26.5, "about 30 units")
     lo, hi = bootstrap_ci([True] * 80 + [False] * 20)
     assert lo < 0.8 < hi and 0.65 < lo and hi < 0.95
+
+
+@pytest.mark.skipif(
+    not (REAL_DB.exists() and HARD.exists()), reason="needs data/store.db + hard set"
+)
+def test_oracle_scores_perfectly_on_hard_split(tmp_path):
+    db = tmp_path / "store.db"
+    shutil.copyfile(REAL_DB, db)
+    tools = StoreTools(db)
+    scenarios = [json.loads(line) for line in HARD.read_text().splitlines()]
+    results = [score(sc, play(sc, tools)) for sc in scenarios]
+    agg = aggregate(results)
+    assert len(results) == 100
+    assert agg["task_success"] == 1.0, [
+        (r["id"], r["failed_checks"]) for r in results if not r["task_success"]
+    ]
+    assert agg["faithfulness"] == 1.0 and agg["exact_arg_match"] == 1.0
