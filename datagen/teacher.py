@@ -26,8 +26,11 @@ class Teacher:
         api_key: str | None = None,
         model: str | None = None,
         timeout: float = 120.0,
+        on_usage=None,
     ):
+        """`on_usage(usage_dict)` is called after every completion that reports token usage."""
         load_dotenv()
+        self.on_usage = on_usage
         self.base_url = (base_url or os.getenv("TEACHER_BASE_URL", "")).rstrip("/")
         self.api_key = api_key or os.getenv("TEACHER_API_KEY", "")
         self.model = model or os.getenv("TEACHER_MODEL", "")
@@ -75,7 +78,11 @@ class Teacher:
                     raise
             time.sleep(2 * 2**attempt)
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]
+        data = resp.json()
+        msg = data["choices"][0]["message"]
+        if self.on_usage and data.get("usage"):
+            self.on_usage(data["usage"])
+        return msg
 
 
 def parse_json_object(text: str) -> dict:
