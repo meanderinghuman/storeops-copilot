@@ -14,23 +14,31 @@ def oracle_chat(scenario: dict, tools: StoreTools):
     store = scenario["store_id"]
     planned: list[list[dict]] = []
 
-    item = scenario.get("item_id")
-    if item:
+    items = scenario.get("item_ids") or ([scenario["item_id"]] if scenario.get("item_id") else [])
+    for item in items:
         name = tools.get_inventory(item, store)["name"]
         planned.append([_tc("search_items", {"query": name, "store_id": store})])
     for c in exp["calls"]:
         if c["name"] == "search_items":
+            if not items:  # nothing specific to look up: search with the manager's words
+                planned.append(
+                    [_tc("search_items", {"query": scenario["query"], "store_id": store})]
+                )
             continue
         name = c["name"][0] if isinstance(c["name"], list) else c["name"]
         args = dict(c["args"])
         if name == "get_promotions":
             args.setdefault("days", 14)
         planned.append([_tc(name, args)])
-    if exp["write"]:
-        planned.append([_tc(exp["write"]["name"], exp["write"]["args"])])
+    for w in exp.get("writes") or ([exp["write"]] if exp["write"] else []):
+        planned.append([_tc(w["name"], w["args"])])
 
     def answer() -> str:
-        parts = [str(n) for n in exp["answer_numbers"]] + exp["answer_terms_any"][:1]
+        parts = (
+            [str(n) for n in exp["answer_numbers"]]
+            + exp["answer_terms_any"][:1]
+            + exp.get("answer_terms_all", [])
+        )
         if exp["outcome"] == "decline":
             return (
                 "Sorry, I can only help with this store's inventory, sales, forecasts and ordering."

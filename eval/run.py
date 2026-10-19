@@ -57,7 +57,9 @@ def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4)
             return client.chat(messages, tools=specs, temperature=0.0, max_tokens=1024)
 
         try:
-            conv = run_agent(chat, tools, sc["store_id"], sc["query"], ALL_TOOLS, max_rounds)
+            conv = run_agent(
+                chat, tools, sc["store_id"], sc["query"], ALL_TOOLS, max_rounds, sc.get("history")
+            )
         except Exception as exc:  # noqa: BLE001 - recorded, retried on the next run
             return {"id": sc["id"], "api_error": f"{type(exc).__name__}: {exc}"[:300]}
         conv["tokens"] = tokens["prompt"] + tokens["completion"] or None
@@ -81,7 +83,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument(
         "--api-key", default=None, help="default TEACHER_API_KEY; 'none' for llama-server"
     )
-    p.add_argument("--testset", type=Path, default=Path("eval/testset.jsonl"))
+    p.add_argument("--testset", type=Path, nargs="+",
+                   default=[Path("eval/testset.jsonl"), Path("eval/testset_hard.jsonl")])  # fmt: skip
     p.add_argument("--db", type=Path, default=Path("data/store.db"))
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--limit", type=int, default=None)
@@ -89,7 +92,8 @@ def main(argv: list[str] | None = None) -> None:
 
     label = a.label or a.model
     out = Path("data/eval") / f"{label}.jsonl"
-    scenarios = {sc["id"]: sc for sc in read_jsonl(a.testset)[: a.limit]}
+    scenarios = {sc["id"]: sc for path in a.testset for sc in read_jsonl(path)}
+    scenarios = dict(list(scenarios.items())[: a.limit])
     done = {r["id"]: r for r in read_jsonl(out) if "score" in r}
     todo = [sc for i, sc in scenarios.items() if i not in done]
     print(f"{label}: {len(scenarios)} scenarios, {len(done)} done, {len(todo)} to run")
