@@ -102,7 +102,7 @@ TOOL_SCHEMAS: dict[str, dict] = {
                     "minimum": 1,
                     "maximum": MAX_HORIZON_DAYS,
                     "default": 7,
-                    "description": "Forecast horizon in days starting tomorrow (default 7).",
+                    "description": "Forecast horizon in days starting today (default 7).",
                 },
             },
             ["item_id", "store_id"],
