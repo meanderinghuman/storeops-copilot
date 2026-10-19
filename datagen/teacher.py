@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 
 import httpx
 from dotenv import load_dotenv
@@ -34,8 +35,10 @@ class Teacher:
             raise TeacherNotConfigured("Set TEACHER_BASE_URL and TEACHER_API_KEY in .env")
         if not self.model:
             raise TeacherNotConfigured("Set TEACHER_MODEL in .env")
+        # Short connect timeout: over the VPN a stalled connection is better retried quickly.
         self._client = httpx.Client(
-            timeout=timeout, headers={"Authorization": f"Bearer {self.api_key}"}
+            timeout=httpx.Timeout(timeout, connect=10.0),
+            headers={"Authorization": f"Bearer {self.api_key}"},
         )
 
     def list_models(self) -> list[str]:
@@ -49,6 +52,7 @@ class Teacher:
         tools: list[dict] | None = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        retries: int = 3,
         **extra,
     ) -> dict:
         """Return the assistant message dict (content and optional tool_calls)."""
@@ -61,7 +65,15 @@ class Teacher:
         }
         if tools:
             body["tools"] = tools
-        resp = self._client.post(f"{self.base_url}/chat/completions", json=body)
+        for attempt in range(retries + 1):
+            try:
+                resp = self._client.post(f"{self.base_url}/chat/completions", json=body)
+                if resp.status_code not in (429, 500, 502, 503, 504) or attempt == retries:
+                    break
+            except httpx.TransportError:
+                if attempt == retries:
+                    raise
+            time.sleep(2 * 2**attempt)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]
 
