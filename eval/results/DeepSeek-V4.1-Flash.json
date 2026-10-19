@@ -1,0 +1,64 @@
+{
+  "label": "DeepSeek-V4.1-Flash",
+  "model": "DeepSeek-V4.1-Flash",
+  "scenarios": 500,
+  "task_success": 0.998,
+  "task_success_ci95": [
+    0.994,
+    1.0
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "unseen": {
+      "n": 100,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.99,
+      "ci95": [
+        0.97,
+        1.0
+      ]
+    }
+  },
+  "valid_call_rate": 1.0,
+  "hallucinated_id_rate": 0.008,
+  "tool_selection_accuracy": 0.998,
+  "exact_arg_match": 0.998,
+  "faithfulness": 0.986,
+  "decline_accuracy": 1.0,
+  "clarification_rate": 1.0,
+  "unrequested_write_rate": 0.0,
+  "steps_per_task": 1.89,
+  "latency_p50_s": 3.56,
+  "latency_p95_s": 6.66,
+  "tokens_per_conversation": 6401
+}
