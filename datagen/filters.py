@@ -51,7 +51,7 @@ def ungrounded_numbers(answer: str, messages: list[dict]) -> list[float]:
     for v, pct in numbers_in(answer):
         ok = (
             v in sources
-            or (v.is_integer() and any(round(s) == v for s in sources))
+            or (v.is_integer() and any(abs(s - v) <= 0.5 for s in sources))
             or (pct and round(v / 100, 4) in sources)
         )
         if not ok:
