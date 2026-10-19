@@ -15,6 +15,10 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8.3", "ruff>=0.8"]
+tokenize = [
+    "jinja2>=3.1.6",
+    "transformers>=4.45",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
