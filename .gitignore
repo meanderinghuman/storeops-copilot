@@ -15,6 +15,7 @@ data/raw/*
 data/*.db
 data/*.db-*
 data/cache/
+data/gen/
 models/
 *.gguf
 *.safetensors
