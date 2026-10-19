@@ -18,15 +18,17 @@ from pathlib import Path
 
 from datagen.filters import KINDS
 from datagen.runner import append_jsonl, read_jsonl, run_many
-from store.tools import tool_specs
+from store.tools import result_json, tool_specs
 
 
 def to_training_messages(messages: list[dict]) -> list[dict]:
     """Chat-template-ready messages: tool-call arguments as objects (Qwen's template serialises
-    them itself), no API-only fields on tool results."""
+    them itself), compact tool results, no API-only fields."""
     out = []
     for m in messages:
         m = {k: v for k, v in m.items() if k != "tool_call_id"}
+        if m["role"] == "tool":
+            m["content"] = result_json(json.loads(m["content"]))
         if m.get("tool_calls"):
             m["content"] = ""  # drop occasional filler like "I'll look that up." (~7% of turns)
             m["tool_calls"] = [

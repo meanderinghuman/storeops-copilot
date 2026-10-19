@@ -186,6 +186,11 @@ WRITE_TOOLS = {"create_purchase_order", "request_stock_transfer"}
 REVIEW_PERIOD_DAYS = 7
 
 
+def result_json(result: dict) -> str:
+    """How a tool result is shown to the model: compact JSON (saves ~15% of result tokens)."""
+    return json.dumps(result, separators=(",", ":"))
+
+
 def tool_specs(names: list[str] = TRAINING_TOOLS) -> list[dict]:
     """OpenAI / Qwen-style tool list for the system prompt."""
     return [TOOL_SCHEMAS[n] for n in names]

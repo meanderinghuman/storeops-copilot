@@ -7,14 +7,13 @@ data execution-verified.
 
 from __future__ import annotations
 
-import json
 import sqlite3
 import time
 from collections.abc import Callable
 from pathlib import Path
 
 from store.prompt import system_prompt
-from store.tools import TRAINING_TOOLS, StoreTools, ToolError, tool_specs
+from store.tools import TRAINING_TOOLS, StoreTools, ToolError, result_json, tool_specs
 
 ChatFn = Callable[[list[dict], list[dict]], dict]  # (messages, tool specs) -> assistant message
 
@@ -84,7 +83,7 @@ def run_agent(
                     "role": "tool",
                     "tool_call_id": tc["id"],
                     "name": name,
-                    "content": json.dumps(result),
+                    "content": result_json(result),
                 }
             )
     return {
