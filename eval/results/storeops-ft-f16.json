@@ -1,0 +1,64 @@
+{
+  "label": "storeops-ft-f16",
+  "model": "storeops-ft-f16",
+  "scenarios": 500,
+  "task_success": 0.656,
+  "task_success_ci95": [
+    0.614,
+    0.698
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.633,
+      "ci95": [
+        0.553,
+        0.713
+      ]
+    },
+    "unseen": {
+      "n": 100,
+      "task_success": 0.32,
+      "ci95": [
+        0.23,
+        0.41
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 0.987,
+      "ci95": [
+        0.96,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.64,
+      "ci95": [
+        0.533,
+        0.747
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.79,
+      "ci95": [
+        0.71,
+        0.87
+      ]
+    }
+  },
+  "valid_call_rate": 0.863,
+  "hallucinated_id_rate": 0.037,
+  "tool_selection_accuracy": 0.684,
+  "exact_arg_match": 0.66,
+  "faithfulness": 0.955,
+  "decline_accuracy": 0.987,
+  "clarification_rate": 0.629,
+  "unrequested_write_rate": 0.02,
+  "steps_per_task": 1.6,
+  "latency_p50_s": 3.92,
+  "latency_p95_s": 8.83,
+  "tokens_per_conversation": 5899
+}
