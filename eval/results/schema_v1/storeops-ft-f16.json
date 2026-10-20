@@ -1,0 +1,65 @@
+{
+  "label": "storeops-ft-f16",
+  "model": "storeops-ft-f16",
+  "scenarios": 499,
+  "task_success": 0.671,
+  "task_success_ci95": [
+    0.631,
+    0.713
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.627,
+      "ci95": [
+        0.547,
+        0.7
+      ]
+    },
+    "unseen": {
+      "n": 99,
+      "task_success": 0.323,
+      "ci95": [
+        0.232,
+        0.414
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.68,
+      "ci95": [
+        0.573,
+        0.787
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.83,
+      "ci95": [
+        0.76,
+        0.9
+      ]
+    }
+  },
+  "valid_call_rate": 0.984,
+  "hallucinated_id_rate": 0.13,
+  "tool_selection_accuracy": 0.714,
+  "exact_arg_match": 0.685,
+  "faithfulness": 0.974,
+  "decline_accuracy": 1.0,
+  "clarification_rate": 0.714,
+  "unrequested_write_rate": 0.028,
+  "steps_per_task": 1.65,
+  "latency_p50_s": 3.84,
+  "latency_p95_s": 9.2,
+  "tokens_per_conversation": 6038,
+  "incomplete": "1 scenarios not scored (API errors); re-run to resume"
+}
