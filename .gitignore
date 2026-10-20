@@ -38,3 +38,4 @@ CLAUDE.md
 
 # Downloaded Kaggle runs (contain outputs; kept local)
 train/notebook*.ipynb
+train/kaggle_run_*.ipynb

@@ -1,0 +1,65 @@
+{
+  "label": "storeops-ft-q4",
+  "model": "storeops-ft-q4",
+  "scenarios": 499,
+  "task_success": 0.503,
+  "task_success_ci95": [
+    0.459,
+    0.547
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.393,
+      "ci95": [
+        0.32,
+        0.473
+      ]
+    },
+    "unseen": {
+      "n": 99,
+      "task_success": 0.242,
+      "ci95": [
+        0.162,
+        0.333
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.547,
+      "ci95": [
+        0.427,
+        0.667
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.52,
+      "ci95": [
+        0.42,
+        0.61
+      ]
+    }
+  },
+  "valid_call_rate": 0.98,
+  "hallucinated_id_rate": 0.223,
+  "tool_selection_accuracy": 0.512,
+  "exact_arg_match": 0.441,
+  "faithfulness": 0.936,
+  "decline_accuracy": 1.0,
+  "clarification_rate": 0.686,
+  "unrequested_write_rate": 0.038,
+  "steps_per_task": 1.78,
+  "latency_p50_s": 1.76,
+  "latency_p95_s": 5.78,
+  "tokens_per_conversation": 5461,
+  "incomplete": "1 scenarios not scored (API errors); re-run to resume"
+}
