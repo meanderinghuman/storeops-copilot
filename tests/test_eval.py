@@ -171,3 +171,10 @@ def test_oracle_scores_perfectly_on_hard_split(tmp_path):
         (r["id"], r["failed_checks"]) for r in results if not r["task_success"]
     ]
     assert agg["faithfulness"] == 1.0 and agg["exact_arg_match"] == 1.0
+
+
+def test_zero_in_words():
+    assert number_present(0, "Nothing in transit, 13 on hand.")
+    assert number_present(0, "There are no units on order.")
+    assert not number_present(0, "You have 13 on hand.")
+    assert not number_present(5, "Nothing in transit.")

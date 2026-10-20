@@ -52,8 +52,17 @@ def _matches(expected: dict, call: dict) -> tuple[bool, bool]:
     return True, all(k in got and _same(got[k], v) for k, v in expected["args"].items())
 
 
+ZERO_WORDS = re.compile(
+    r"\b(none|nothing|zero)\b|\bno\s+(units|stock|items|inventory|orders?|sales|promotions?)\b",
+    re.IGNORECASE,
+)
+
+
 def number_present(value: float, answer: str) -> bool:
-    """The expected number appears in the answer, exactly or rounded to an integer."""
+    """The expected number appears in the answer, exactly or rounded to an integer.
+    An expected 0 may also be stated in words ("nothing in transit", "no units on order")."""
+    if value == 0 and ZERO_WORDS.search(answer):
+        return True
     return any(
         _same(v, value) or (v.is_integer() and abs(value - v) <= 0.5) for v, _ in numbers_in(answer)
     )

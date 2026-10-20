@@ -88,6 +88,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--db", type=Path, default=Path("data/store.db"))
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--limit", type=int, default=None)
+    p.add_argument(
+        "--rescore", action="store_true", help="only recompute the summary from transcripts"
+    )
     a = p.parse_args(argv)
 
     label = a.label or a.model
@@ -95,7 +98,7 @@ def main(argv: list[str] | None = None) -> None:
     scenarios = {sc["id"]: sc for path in a.testset for sc in read_jsonl(path)}
     scenarios = dict(list(scenarios.items())[: a.limit])
     done = {r["id"]: r for r in read_jsonl(out) if "score" in r}
-    todo = [sc for i, sc in scenarios.items() if i not in done]
+    todo = [] if a.rescore else [sc for i, sc in scenarios.items() if i not in done]
     print(f"{label}: {len(scenarios)} scenarios, {len(done)} done, {len(todo)} to run")
 
     start, errors_in_a_row = time.monotonic(), 0
@@ -110,8 +113,9 @@ def main(argv: list[str] | None = None) -> None:
         if n % 25 == 0 or n == len(todo):
             print(f"  {n}/{len(todo)}  {n / (time.monotonic() - start) * 60:.0f}/min", flush=True)
 
+    # Re-score from the saved transcripts so scorer fixes apply to every model equally.
     results = {r["id"]: r for r in read_jsonl(out) if "score" in r}
-    scores = [results[i]["score"] for i in scenarios if i in results]
+    scores = [score(scenarios[i], results[i]["conversation"]) for i in scenarios if i in results]
     summary = {"label": label, "model": a.model, **aggregate(scores)}
     missing = len(scenarios) - len(scores)
     if missing:
