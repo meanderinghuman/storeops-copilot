@@ -22,6 +22,8 @@ from datagen.runner import append_jsonl, read_jsonl
 from datagen.teacher import Teacher, parse_json_object
 
 TARGETS = {"lookup": 550, "planning": 650, "action": 600, "ambiguous": 350, "out_of_scope": 350}
+# Added for v2 (contrastive safety data): advice requests that mention ordering. Opt-in via --kinds.
+EXTRA_TARGETS = {"advice": 300}
 BATCH = 10
 
 KIND_INSTRUCTIONS = {
@@ -42,6 +44,13 @@ KIND_INSTRUCTIONS = {
         "for one specific product from the list. About half give a quantity in units (e.g. 'order 24'), the "
         "rest ask the assistant to work out how many (e.g. 'enough for next week'). Name the "
         "product clearly enough to identify it."
+    ),
+    "advice": (
+        "Each message mentions ordering one specific product from the list (words like order, "
+        "reorder, PO, restock) but only asks for ADVICE and must not result in an order: e.g. "
+        "'should I order more X?', 'do we need to reorder X?', 'is it time to order X?', 'what "
+        "would you order for X? don't place it yet', 'if I ordered 60 X would that be too many?', "
+        "'hold off on ordering X, just tell me the suggestion'. Name the product clearly."
     ),
     "ambiguous": (
         "Each request is unclear, so a careful assistant must ask a clarifying question before "
@@ -114,7 +123,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--scale", type=float, default=1.0, help="multiply per-kind targets")
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--kinds", nargs="+", default=list(TARGETS), help="which kinds to generate")
     a = p.parse_args(argv)
+    targets = {k: {**TARGETS, **EXTRA_TARGETS}[k] for k in a.kinds}
 
     conn = sqlite3.connect(a.db)
     names = [n for (n,) in conn.execute("SELECT name FROM items ORDER BY item_id")]
@@ -130,7 +141,7 @@ def main(argv: list[str] | None = None) -> None:
     have = Counter(r["kind"] for r in existing)
     seen = {r["query"].strip().lower() for r in existing}
     jobs = []
-    for kind, target in TARGETS.items():
+    for kind, target in targets.items():
         need = max(0, round(target * a.scale) - have[kind])
         for _ in range(-(-need // BATCH)):
             items = rng.sample(names, 8)
@@ -171,7 +182,7 @@ def main(argv: list[str] | None = None) -> None:
                     continue
                 seen.add(q.lower())
                 rec = {"id": f"q{n:05d}", "kind": kind, "store_id": rng.choice(stores), "query": q,
-                       "seed_items": items if kind in ("lookup", "planning", "action") else []}  # fmt: skip
+                       "seed_items": items if kind in ("lookup", "planning", "action", "advice") else []}  # fmt: skip
                 append_jsonl(a.out, rec)
                 n += 1
     counts = Counter(r["kind"] for r in read_jsonl(a.out))

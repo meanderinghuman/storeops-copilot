@@ -11,7 +11,7 @@ import re
 
 from store.tools import WRITE_TOOLS
 
-KINDS = ["lookup", "planning", "action", "ambiguous", "out_of_scope"]
+KINDS = ["lookup", "planning", "action", "ambiguous", "out_of_scope", "advice"]
 PLANNING_TOOLS = {"get_forecast", "get_reorder_suggestion", "get_sales_history"}
 MAX_ANSWER_CHARS = 1200
 
@@ -131,11 +131,11 @@ def check(conv: dict, kind: str) -> list[str]:
                 reasons.append("po_id_not_reported")
             if not re.search(r"confirm", answer, re.IGNORECASE):
                 reasons.append("no_confirmation_request")
-    else:  # lookup, planning
+    else:  # lookup, planning, advice (advice: mentions ordering but must not order)
         if writes:
             reasons.append("unrequested_order")
         if not calls:
             reasons.append("no_tool_call")
-        elif kind == "planning" and not PLANNING_TOOLS & set(names):
+        elif kind in ("planning", "advice") and not PLANNING_TOOLS & set(names):
             reasons.append("planning_without_forecast")
     return sorted(set(reasons))
