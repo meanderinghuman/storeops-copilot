@@ -29,7 +29,8 @@ from store.forecast import MAX_HORIZON_DAYS, Z90, UnknownSeries, seasonal_naive
 ITEM_ID = {
     "type": "string",
     "pattern": r"^[A-Z]+_\d+_\d+$",
-    "description": "Item ID from search_items, e.g. HOUSEHOLD_1_118.",
+    # No example ID here: a small model copied the example into calls instead of searching.
+    "description": "The item_id exactly as returned by search_items. Never guess it.",
 }
 STORE_ID = {"type": "string", "pattern": r"^[A-Z]{2}_\d+$", "description": "Store ID, e.g. CA_1."}
 
@@ -287,7 +288,10 @@ class StoreTools:
             (store_id, item_id),
         ).fetchone()
         if row is None:
-            raise ToolError(f"Unknown item_id '{item_id}' at store {store_id}.")
+            raise ToolError(
+                f"Unknown item_id '{item_id}' at store {store_id}. "
+                "Use search_items to find the item_id."
+            )
         return row
 
     def _forecast(self, item_id: str, store_id: str, days: int) -> dict:
