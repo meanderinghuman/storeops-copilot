@@ -244,3 +244,9 @@ def test_web_ui_and_listings(tools, name):
     assert [
         t["transfer_id"] for t in c.get("/v1/transfers", params={"store_id": "CA_2"}).json()
     ] == ["TR-0001"]
+
+
+def test_placeholder_escalation_url_means_local_only(monkeypatch):
+    monkeypatch.setenv("TEACHER_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.delenv("ESCALATION_BASE_URL", raising=False)
+    assert Settings.from_env().escalation_base_url == ""

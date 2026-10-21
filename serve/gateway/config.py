@@ -12,11 +12,16 @@ def _bool(name: str, default: bool) -> bool:
     return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
 
+def _url(value: str) -> str:
+    """The .env.example placeholder means 'not configured' (local-only mode)."""
+    return "" if "example.com" in value else value
+
+
 @dataclass(frozen=True)
 class Settings:
     # Local model: llama-server (OpenAI-compatible)
     llm_base_url: str = "http://localhost:8080/v1"
-    llm_model: str = "storeops-v2-q5_k_m"
+    llm_model: str = "storeops-v2-q8_0"
     # Escalation: large model behind an OpenAI-compatible API (the teacher endpoint by default)
     escalation_enabled: bool = True
     escalation_base_url: str = ""
@@ -43,7 +48,7 @@ class Settings:
             llm_base_url=e("LLM_BASE_URL", cls.llm_base_url),
             llm_model=e("LLM_MODEL", cls.llm_model),
             escalation_enabled=_bool("ESCALATION_ENABLED", True),
-            escalation_base_url=e("ESCALATION_BASE_URL") or e("TEACHER_BASE_URL", ""),
+            escalation_base_url=_url(e("ESCALATION_BASE_URL") or e("TEACHER_BASE_URL", "")),
             escalation_api_key=e("ESCALATION_API_KEY") or e("TEACHER_API_KEY", ""),
             escalation_model=e("ESCALATION_MODEL") or e("TEACHER_MODEL", ""),
             db_path=e("STORE_DB_PATH", cls.db_path),
