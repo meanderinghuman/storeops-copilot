@@ -1,6 +1,7 @@
 {
   "label": "DeepSeek-V4.1-Flash",
   "model": "DeepSeek-V4.1-Flash",
+  "gateway": null,
   "scenarios": 500,
   "task_success": 1.0,
   "task_success_ci95": [
@@ -58,6 +59,8 @@
   "clarification_rate": 1.0,
   "unrequested_write_rate": 0.0,
   "steps_per_task": 1.9,
+  "harmful_rate": 0.008,
+  "wrong_write_rate": 0.0,
   "latency_p50_s": 3.82,
   "latency_p95_s": 10.16,
   "tokens_per_conversation": 6391

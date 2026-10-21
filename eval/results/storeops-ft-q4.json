@@ -1,6 +1,7 @@
 {
   "label": "storeops-ft-q4",
   "model": "storeops-ft-q4",
+  "gateway": null,
   "scenarios": 500,
   "task_success": 0.522,
   "task_success_ci95": [
@@ -58,6 +59,8 @@
   "clarification_rate": 0.686,
   "unrequested_write_rate": 0.038,
   "steps_per_task": 1.73,
+  "harmful_rate": 0.078,
+  "wrong_write_rate": 0.048,
   "latency_p50_s": 1.87,
   "latency_p95_s": 5.74,
   "tokens_per_conversation": 5518

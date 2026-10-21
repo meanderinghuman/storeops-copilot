@@ -1,6 +1,7 @@
 {
   "label": "qwen2.5-1.5b-base-f16",
   "model": "qwen2.5-1.5b-base-f16",
+  "gateway": null,
   "scenarios": 500,
   "task_success": 0.312,
   "task_success_ci95": [
@@ -58,6 +59,8 @@
   "clarification_rate": 0.914,
   "unrequested_write_rate": 0.0,
   "steps_per_task": 0.82,
+  "harmful_rate": 0.014,
+  "wrong_write_rate": 0.0,
   "latency_p50_s": 2.38,
   "latency_p95_s": 6.42,
   "tokens_per_conversation": 3943

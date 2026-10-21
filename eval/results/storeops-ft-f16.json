@@ -1,6 +1,7 @@
 {
   "label": "storeops-ft-f16",
   "model": "storeops-ft-f16",
+  "gateway": null,
   "scenarios": 500,
   "task_success": 0.656,
   "task_success_ci95": [
@@ -58,6 +59,8 @@
   "clarification_rate": 0.629,
   "unrequested_write_rate": 0.02,
   "steps_per_task": 1.6,
+  "harmful_rate": 0.078,
+  "wrong_write_rate": 0.038,
   "latency_p50_s": 3.92,
   "latency_p95_s": 8.83,
   "tokens_per_conversation": 5899
