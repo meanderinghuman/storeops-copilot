@@ -1,7 +1,14 @@
 // StoreOps Copilot web UI. Plain JS, no build step; talks to the gateway on the same origin.
 "use strict";
 
-const STORES = ["CA_1", "CA_2", "CA_3", "CA_4"];
+// Display names are fictional labels for the M5 dataset's anonymized California stores.
+const STORES = [
+  { id: "CA_1", name: "Sacramento Midtown" },
+  { id: "CA_2", name: "San Jose North" },
+  { id: "CA_3", name: "Fresno Central" },
+  { id: "CA_4", name: "Riverside Plaza" },
+];
+const storeName = (id) => (STORES.find((s) => s.id === id) || { name: id }).name;
 // Each example was checked to be answered locally 3/3 times (others work too, via escalation).
 const EXAMPLES = [
   "Will we run out of Fresh bananas bunch 2 lb before the weekend?",
@@ -33,7 +40,7 @@ const REASON = {
 };
 
 const state = {
-  store: localStorage.getItem("store") || "CA_3",
+  store: ["CA_1", "CA_2", "CA_3", "CA_4"].includes(localStorage.getItem("store")) ? localStorage.getItem("store") : "CA_3",
   chats: {},            // store -> [{message, answer}]
   stats: { n: 0, local: 0, seconds: 0 },
   apiKey: sessionStorage.getItem("apiKey") || "",
@@ -66,6 +73,11 @@ function el(html) {
 }
 
 const fmt = (n) => (Number.isInteger(n) ? n.toLocaleString() : Number(n).toFixed(1));
+// "2016-05-23" -> "Mon, May 23" (the data's calendar; the year is left out on purpose)
+function day(iso, weekday = true) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return d.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", ...(weekday ? { weekday: "short" } : {}) });
+}
 
 async function api(method, path, body) {
   const headers = { "Content-Type": "application/json" };
@@ -104,7 +116,7 @@ const RENDER = {
   get_sales_history: (r) => {
     const max = Math.max(1, ...r.weeks.map((w) => w.units));
     const bars = r.weeks.map((w) => `<div title="${esc(w.week_start)} – ${esc(w.week_end)}: ${w.units}">
-      <span>${w.units}</span><i style="height:${Math.max(3, (w.units / max) * 54)}px"></i><span>${esc(w.week_start.slice(5))}</span></div>`).join("");
+      <span>${w.units}</span><i style="height:${Math.max(3, (w.units / max) * 54)}px"></i><span>${esc(day(w.week_start, false))}</span></div>`).join("");
     return `<div class="bars">${bars}</div><div class="muted" style="font-size:12px">total ${fmt(r.total_units)} · ${fmt(r.avg_units_per_week)}/week</div>`;
   },
   get_forecast: (r) => {
@@ -115,14 +127,14 @@ const RENDER = {
       <span class="lbl" style="left:${pos(t.p10)}">low ${fmt(t.p10)}</span>
       <span class="lbl m" style="left:${pos(t.p50)}">expected ${fmt(t.p50)}</span>
       <span class="lbl" style="left:${pos(t.p90)}">high ${fmt(t.p90)}</span></div>
-      <div class="muted" style="font-size:12px">${esc(r.start_date)} – ${esc(r.end_date)} (${r.horizon_days} days)</div>`;
+      <div class="muted" style="font-size:12px">${esc(day(r.start_date))} – ${esc(day(r.end_date))} · ${r.horizon_days} days</div>`;
   },
   get_reorder_suggestion: (r) => tiles([["suggested order", fmt(r.suggested_quantity), true],
     [`demand @ ${Math.round(r.service_level * 100)}%`, fmt(r.demand_at_service_level)], ["on hand", fmt(r.on_hand)],
     ["on order", fmt(r.on_order + r.pending_po_quantity)], ["covers", `${r.coverage_days} d`], ["pack", fmt(r.pack_size)]]),
   get_promotions: (r) => r.promotions.length
     ? r.promotions.slice(0, 8).map((p) => `<div class="promo"><span>${esc(p.name)}</span>
-        <span class="muted">${p.discount_pct}% off · ${esc(p.start_date.slice(5))}–${esc(p.end_date.slice(5))}</span></div>`).join("")
+        <span class="muted">${p.discount_pct}% off · ${esc(day(p.start_date, false))} – ${esc(day(p.end_date, false))}</span></div>`).join("")
       + (r.promotions.length > 8 ? `<div class="muted" style="font-size:12px">+${r.promotions.length - 8} more</div>` : "")
     : `<div class="muted">No promotions in this window.</div>`,
   create_purchase_order: (r) => `<div class="muted">${esc(r.po_id)} · ${fmt(r.quantity)} × ${esc(r.name)} · pending your approval</div>`,
@@ -148,7 +160,7 @@ function renderStep(c) {
 function approvalCard(p, inline = false) {
   const isPo = Boolean(p.po_id);
   const ref = p.po_id || p.transfer_id;
-  const what = isPo ? "Purchase order" : `Transfer ${p.from_store} → ${p.to_store}`;
+  const what = isPo ? "Purchase order" : `Transfer ${storeName(p.from_store)} → ${storeName(p.to_store)}`;
   return `<div class="card${inline ? " inline" : ""}" data-ref="${esc(ref)}" data-kind="${isPo ? "orders" : "transfers"}">
     <div class="card-head"><span class="card-id">${esc(ref)}</span><span class="card-qty">${esc(what)}</span></div>
     <div class="card-title">${fmt(p.quantity)} × ${esc(p.name || p.item_id)}</div>
@@ -292,13 +304,15 @@ async function send(text) {
 function selectStore(store) {
   state.store = store;
   localStorage.setItem("store", store);
-  $("store-title").textContent = `Store ${store}`;
+  $("store-title").textContent = storeName(store);
+  $("store-id").textContent = `Store ${store}`;
   document.querySelectorAll("#stores button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.store === store)));
   refreshApprovals();
 }
 
 function init() {
-  $("stores").innerHTML = STORES.map((s) => `<button role="tab" data-store="${s}">${s.replace("_", " ")}</button>`).join("");
+  $("stores").innerHTML = STORES.map((s) => `<button role="tab" data-store="${s.id}">
+    <span class="store-name">${esc(s.name)}</span><span class="store-id">${s.id}</span></button>`).join("");
   $("stores").onclick = (e) => { const b = e.target.closest("button"); if (b) selectStore(b.dataset.store); };
   $("examples").innerHTML = EXAMPLES.map((x) => `<button>${esc(x)}</button>`).join("");
   $("examples").onclick = (e) => { const b = e.target.closest("button"); if (b) send(b.textContent); };
