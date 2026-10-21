@@ -11,12 +11,13 @@ can't handle reliably to a large API model.
 > the demand forecast, computes a reorder quantity in code, and offers to stage a purchase order
 > that the manager has to confirm.
 
-<p align="center"><img src="docs/screens/chat_light.png" width="900" alt="StoreOps Copilot: a run-out question answered from stock and forecast tools, a one-click follow-up that stages a purchase order for approval, and a clarifying question for a vague request"></p>
+<p align="center"><img src="docs/demo.gif" width="900" alt="Demo: a run-out question answered locally from stock and forecast tools, 'yes, go ahead' staging a purchase order that the manager confirms, a sales question escalated to the large model, and an out-of-scope question declined"></p>
 
 Every answer shows **how** it was reached (catalog search, stock, sales chart, forecast range,
 reorder math), whether it ran **locally or was escalated**, and any order it drafted, which waits
-for the manager's **Confirm**. [Dark mode](docs/screens/chat_dark.png) ·
-[welcome screen](docs/screens/welcome_light.png).
+for the manager's **Confirm**. Screenshots: [conversation](docs/screens/chat_light.png) ·
+[dark mode](docs/screens/chat_dark.png) · [welcome screen](docs/screens/welcome_light.png).
+Store names in the UI are fictional labels for the M5 dataset's anonymized California stores.
 
 ## Results
 
