@@ -26,6 +26,7 @@ from datagen.filters import plain, ungrounded_numbers
 from datagen.teacher import Teacher
 from serve.gateway import metrics as M
 from serve.gateway.config import Settings
+from serve.gateway.intent import check_write
 from store.tools import HELDOUT_TOOLS, TRAINING_TOOLS, WRITE_TOOLS, StoreTools, ToolError
 
 ALL_TOOLS = TRAINING_TOOLS + HELDOUT_TOOLS
@@ -101,6 +102,21 @@ class Copilot:
             max(self.s.qty_cap_p90_multiple * p90, self.s.qty_cap_min_packs * inv["pack_size"])
         )
 
+    def _intent(self, name: str, args: dict, item: str, messages: list[dict]) -> str | None:
+        """The write must match what the manager asked for (see serve/gateway/intent.py)."""
+        last_user = max(i for i, m in enumerate(messages) if m["role"] == "user")
+        before = [
+            m["content"]
+            for m in messages[:last_user]
+            if m["role"] == "assistant" and m.get("content")
+        ]
+        try:
+            item_name = self.tools.get_inventory(item, args.get("store_id", ""))["name"]
+        except ToolError:
+            item_name = ""
+        return check_write(name, args.get("quantity"), item_name, messages[last_user]["content"],
+                           before[-1] if before else "")  # fmt: skip
+
     def guard(self, name: str, raw_args, messages: list[dict]) -> str | None:
         try:
             args = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
@@ -115,6 +131,11 @@ class Copilot:
                 f"item_id '{item}' did not come from search_items in this conversation. Call "
                 "search_items with the product name first, then use an item_id from its results."
             )
+        if name in WRITE_TOOLS and isinstance(item, str):
+            refusal = self._intent(name, args, item, messages)
+            if refusal:
+                M.REJECTED.labels("write_intent").inc()
+                return refusal
         if name == "create_purchase_order" and isinstance(args.get("quantity"), int):
             try:
                 cap = self.quantity_cap(item, args.get("store_id", ""))

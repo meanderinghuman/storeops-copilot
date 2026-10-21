@@ -102,7 +102,7 @@ def test_quantity_cap(tools, name):
     assert out["trace"][1]["ok"] is False and "safety cap" in out["trace"][1]["error"]
     assert out["pending"] == [] and out["needs_review"]  # no escalation configured
     ok = bot(tools, script(search(name), [tc("create_purchase_order", item_id=ITEM, store_id=STORE,
-                                             quantity=cap)], "Staged {po_id}, confirm it.")).handle(STORE, "o")  # fmt: skip
+                                             quantity=cap)], "Staged {po_id}, confirm it.")).handle(STORE, "order it")  # fmt: skip
     assert ok["pending"][0]["quantity"] == cap
 
 
@@ -187,3 +187,41 @@ def test_api_key_and_rate_limit(tools):
     assert bad.status_code == 422  # validated; counts toward the limit
     assert c.post("/v1/chat", json=body, headers=h).status_code == 200
     assert c.post("/v1/chat", json=body, headers=h).status_code == 429
+
+
+def test_write_intent_guard(tools, name):
+    # Ordering on a stock-check question is refused (the model gets the reason back).
+    out = bot(tools, script(search(name), [tc("create_purchase_order", item_id=ITEM, store_id=STORE,
+                                              quantity=6)], "Done.")).handle(STORE, "can u do a stock check on it?")  # fmt: skip
+    assert (
+        out["trace"][1]["ok"] is False
+        and "did not ask to place an order" in out["trace"][1]["error"]
+    )
+    # "Send ... to CA_2" must be a transfer, not a purchase order.
+    out = bot(tools, script(search(name), [tc("create_purchase_order", item_id=ITEM, store_id=STORE,
+                                              quantity=2)], "Done.")).handle(STORE, "send 2 to CA_2")  # fmt: skip
+    assert "request_stock_transfer" in out["trace"][1]["error"]
+    # "yes, go ahead" after the assistant offered to stage an order is a valid order request.
+    history = [{"role": "user", "content": "should I order more?"},
+               {"role": "assistant", "content": "I'd order 6. Want me to stage it?"}]  # fmt: skip
+    out = bot(tools, script(search(name), [tc("create_purchase_order", item_id=ITEM, store_id=STORE,
+                                              quantity=6)], "Staged {po_id}, confirm it.")
+              ).handle(STORE, "yes, go ahead", history)  # fmt: skip
+    assert out["trace"][1]["ok"] and out["pending"][0]["quantity"] == 6
+
+
+def test_intent_rules():
+    from serve.gateway.intent import check_write
+
+    assert check_write("create_purchase_order", 24, "X", "Order 24 X.", "") is None
+    assert check_write("create_purchase_order", 24, "X", "Need a PO for X", "") is None
+    assert check_write("create_purchase_order", 24, "X", "How many X do we have?", "") is not None
+    assert (
+        check_write("create_purchase_order", 2, "X", "Move 2 X from CA_4 over here.", "")
+        is not None
+    )
+    assert (
+        check_write("request_stock_transfer", 2, "X", "Move 2 X from CA_4 over here.", "") is None
+    )
+    assert check_write("request_stock_transfer", 2, "X", "have 2 X moved from CA_4", "") is None
+    assert check_write("request_stock_transfer", 2, "X", "How many X at CA_4?", "") is not None
