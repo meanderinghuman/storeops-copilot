@@ -1,4 +1,5 @@
 # Started by `make up` (which also starts llama-server natively on the host).
+# The web UI is served by the gateway: http://localhost:8000
 services:
   forecast:
     build: .
@@ -22,15 +23,6 @@ services:
       - ./data:/app/data  # read-write: staged and confirmed orders
     ports: ["8000:8000"]
     depends_on: [forecast]
-
-  ui:
-    build: .
-    command: streamlit run serve/ui/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
-    environment:
-      GATEWAY_URL: http://gateway:8000
-      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}
-    ports: ["8501:8501"]
-    depends_on: [gateway]
 
   prometheus:
     image: prom/prometheus:v2.53.0

@@ -1,13 +1,14 @@
 # One command starts everything: llama-server natively on the Mac (Metal), the rest in Docker.
 MODEL ?= models/storeops-v2-q8_0.gguf
 ALIAS ?= storeops-v2-q8_0
-SLOTS ?= 2
+# 4 slots doubled throughput vs 1 in the load test
+SLOTS ?= 4
 LLM_LOG = data/llama-server.log
 
 .PHONY: up down llm llm-stop docker reset-db logs test lint ps
 
 up: llm docker  ## start everything
-	@echo "UI http://localhost:8501 | gateway http://localhost:8000/docs | Grafana http://localhost:3000 | Prometheus http://localhost:9090"
+	@echo "UI http://localhost:8000 | API http://localhost:8000/docs | Grafana http://localhost:3000 | Prometheus http://localhost:9090"
 
 llm:  ## llama-server on Metal (all layers on GPU), metrics on
 	@curl -sf http://127.0.0.1:8080/health >/dev/null && echo "llama-server already running" || \
