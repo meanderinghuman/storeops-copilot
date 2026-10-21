@@ -16,6 +16,8 @@ from store.prompt import system_prompt
 from store.tools import TRAINING_TOOLS, StoreTools, ToolError, result_json, tool_specs
 
 ChatFn = Callable[[list[dict], list[dict]], dict]  # (messages, tool specs) -> assistant message
+# (tool name, raw arguments, conversation so far) -> refusal message, or None to execute the call
+GuardFn = Callable[[str, "dict | str", list[dict]], "str | None"]
 
 
 def _assistant(msg: dict) -> dict:
@@ -45,11 +47,15 @@ def run_agent(
     tool_names: list[str] = TRAINING_TOOLS,
     max_rounds: int = 4,
     history: list[dict] | None = None,
+    guard: GuardFn | None = None,
+    deadline: float | None = None,
 ) -> dict:
     """One manager message -> full conversation with executed tool calls.
 
     `history` is earlier turns (after the system prompt) for follow-up requests; only calls made
-    in response to the new message are recorded in "calls".
+    in response to the new message are recorded in "calls". `guard` can refuse a call before it
+    runs (the refusal is returned to the model like a tool error); `deadline` is a
+    time.monotonic() value after which no further model call is made (finish = "timeout").
     Returns {"messages", "calls", "finish", "rounds", "seconds"}; finish is "answer" when the
     model ended with a plain reply, "max_rounds" when it was still calling tools at the cap.
     """
@@ -61,6 +67,9 @@ def run_agent(
     ]
     calls, rounds, start = [], 0, time.monotonic()
     while True:
+        if deadline is not None and time.monotonic() > deadline:
+            finish = "timeout"
+            break
         msg = _assistant(chat(messages, specs))
         messages.append(msg)
         if "tool_calls" not in msg:
@@ -76,6 +85,10 @@ def run_agent(
             try:
                 if name not in tool_names:
                     raise ToolError(f"Unknown tool '{name}'.")
+                refusal = guard(name, raw_args, messages) if guard else None
+                if refusal:
+                    record["guard"] = True
+                    raise ToolError(refusal)
                 result = tools.execute(name, raw_args)
                 record.update(ok=True, result=result)
             except ToolError as exc:
