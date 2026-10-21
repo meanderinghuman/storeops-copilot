@@ -1,7 +1,7 @@
 {
-  "conversations": 2497,
-  "kept": 2354,
-  "retention": 0.943,
+  "conversations": 2797,
+  "kept": 2645,
+  "retention": 0.946,
   "by_kind": {
     "lookup": {
       "total": 555,
@@ -27,13 +27,18 @@
       "total": 350,
       "kept": 347,
       "retention": 0.991
+    },
+    "advice": {
+      "total": 300,
+      "kept": 291,
+      "retention": 0.97
     }
   },
   "rejection_reasons": {
+    "ungrounded_number": 56,
     "guessed_tool_call": 54,
-    "ungrounded_number": 48,
     "no_order_staged": 23,
-    "planning_without_forecast": 16,
+    "planning_without_forecast": 17,
     "no_clarifying_question": 9,
     "order_on_ambiguous": 7,
     "max_rounds": 1,
@@ -41,7 +46,7 @@
   },
   "teacher": "DeepSeek-V4.1-Flash",
   "query_writer": "GLM-5.3",
-  "note": "Execution-verified distillation: every tool call executed against the store DB; a conversation is kept only if it passes all filters in datagen/filters.py.",
+  "note": "Execution-verified distillation: every tool call executed against the store DB; a conversation is kept only if it passes all filters in datagen/filters.py. v2 added 300 contrastive 'advice' queries (mention ordering, must not order).",
   "teacher_bakeoff_20_queries": {
     "GLM-5.3": "20/20, median 5.4 s",
     "DeepSeek-V4.1-Flash": "19/20, median 2.6 s",
