@@ -18,6 +18,7 @@ import shutil
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import replace
 from pathlib import Path
 
 from datagen.agent import reset_writes, run_agent
@@ -29,7 +30,9 @@ from store.tools import HELDOUT_TOOLS, TRAINING_TOOLS, StoreTools
 ALL_TOOLS = TRAINING_TOOLS + HELDOUT_TOOLS
 
 
-def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4):
+def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4, gateway=None):
+    """gateway=None: the bare model through the agent loop. "off" / "escalation": the full gateway
+    (guards, retry, limits), without or with escalation to the large model from .env."""
     scratch.mkdir(parents=True, exist_ok=True)
     local = threading.local()
 
@@ -56,6 +59,8 @@ def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4)
         def chat(messages, specs):
             return client.chat(messages, tools=specs, temperature=0.0, max_tokens=1024)
 
+        if gateway:
+            return gateway_one(sc, tools)
         try:
             conv = run_agent(
                 chat, tools, sc["store_id"], sc["query"], ALL_TOOLS, max_rounds, sc.get("history")
@@ -64,6 +69,22 @@ def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4)
             return {"id": sc["id"], "api_error": f"{type(exc).__name__}: {exc}"[:300]}
         conv["tokens"] = tokens["prompt"] + tokens["completion"] or None
         conv["prompt_tokens"], conv["completion_tokens"] = tokens["prompt"], tokens["completion"]
+        return {"id": sc["id"], "conversation": conv, "score": score(sc, conv)}
+
+    def gateway_one(sc: dict, tools: StoreTools) -> dict:
+        from serve.gateway.config import Settings
+        from serve.gateway.copilot import Copilot
+
+        settings = replace(Settings.from_env(), llm_base_url=base_url, llm_model=model,
+                           escalation_enabled=gateway == "escalation", max_rounds=max_rounds)  # fmt: skip
+        out = Copilot(settings, tools).handle(sc["store_id"], sc["query"], sc.get("history"))
+        conv = out["conversation"] or {
+            "messages": [{"role": "assistant", "content": out["answer"]}],
+            "calls": [], "finish": "answer",
+        }  # fmt: skip
+        u = out["usage"]
+        conv.update(seconds=out["seconds"], route=out["route"], reasons=out["escalation_reasons"],
+                    tokens=sum(v for d in u.values() for v in d.values()) or None, usage=u)  # fmt: skip
         return {"id": sc["id"], "conversation": conv, "score": score(sc, conv)}
 
     pool = ThreadPoolExecutor(max_workers=workers)
@@ -91,6 +112,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument(
         "--rescore", action="store_true", help="only recompute the summary from transcripts"
     )
+    p.add_argument("--gateway", choices=["off", "escalation"], default=None,
+                   help="score the full gateway (guards etc.), without or with escalation")  # fmt: skip
     a = p.parse_args(argv)
 
     label = a.label or a.model
@@ -103,7 +126,17 @@ def main(argv: list[str] | None = None) -> None:
 
     start, errors_in_a_row = time.monotonic(), 0
     for n, rec in enumerate(
-        run(todo, a.model, a.base_url, a.api_key, a.db, Path("data/eval/scratch"), a.workers), 1
+        run(
+            todo,
+            a.model,
+            a.base_url,
+            a.api_key,
+            a.db,
+            Path("data/eval/scratch"),
+            a.workers,
+            gateway=a.gateway,
+        ),
+        1,
     ):
         append_jsonl(out, rec)
         errors_in_a_row = errors_in_a_row + 1 if "api_error" in rec else 0
@@ -116,7 +149,7 @@ def main(argv: list[str] | None = None) -> None:
     # Re-score from the saved transcripts so scorer fixes apply to every model equally.
     results = {r["id"]: r for r in read_jsonl(out) if "score" in r}
     scores = [score(scenarios[i], results[i]["conversation"]) for i in scenarios if i in results]
-    summary = {"label": label, "model": a.model, **aggregate(scores)}
+    summary = {"label": label, "model": a.model, "gateway": a.gateway, **aggregate(scores)}
     missing = len(scenarios) - len(scores)
     if missing:
         summary["incomplete"] = f"{missing} scenarios not scored (API errors); re-run to resume"

@@ -181,7 +181,7 @@ class Copilot:
     def handle(self, store_id: str, message: str, history: list[dict] | None = None) -> dict:
         """Answer one manager message. Returns the answer, route, trace and pending writes."""
         start, request_id = time.monotonic(), uuid.uuid4().hex[:12]
-        route, reasons, usage = "local", [], {}
+        route, reasons, usage, usage_e = "local", [], {}, {}
         try:
             conv, usage = self._attempt(self.local, store_id, message, history)
             reasons = self.problems(conv)
@@ -230,6 +230,7 @@ class Copilot:
             ],
             "pending": writes,
             "seconds": seconds,
+            "usage": {"local": usage, "escalated": usage_e},
             "conversation": conv,
             "local_conversation": local_conv if route == "escalated" else None,
         }
