@@ -3,7 +3,9 @@
 # Usage: loadtest/run_all.sh   (stops any running llama-server first; ~45 min)
 cd "${0:a:h}/.."
 MODEL=models/storeops-v2-q8_0.gguf
-ESCALATION_ENABLED=false LLM_MODEL=storeops-v2-q8_0 RATE_LIMIT_PER_MIN=100000 \
+# Simulated users stage orders: use a scratch copy, never the reference store DB.
+mkdir -p data/loadtest && cp data/store.db data/loadtest/store.db
+STORE_DB_PATH=data/loadtest/store.db ESCALATION_ENABLED=false LLM_MODEL=storeops-v2-q8_0 RATE_LIMIT_PER_MIN=100000 \
   uv run uvicorn serve.gateway.app:app --port 8010 --log-level warning > data/loadtest-gateway.log 2>&1 &
 GW=$!
 trap 'kill $GW; pkill -f "llama-server -m"' EXIT

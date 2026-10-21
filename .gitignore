@@ -19,6 +19,7 @@ data/gen/
 data/eval/
 data/kaggle_upload/
 data/runtime/
+data/loadtest/
 data/*.log
 models/
 *.gguf
