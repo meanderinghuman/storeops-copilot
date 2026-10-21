@@ -1,0 +1,72 @@
+{
+  "label": "system-v2-q8-gateway-off",
+  "model": "storeops-v2-q8_0",
+  "gateway": "off",
+  "scenarios": 500,
+  "task_success": 0.69,
+  "task_success_ci95": [
+    0.65,
+    0.73
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.693,
+      "ci95": [
+        0.62,
+        0.767
+      ]
+    },
+    "unseen": {
+      "n": 100,
+      "task_success": 0.26,
+      "ci95": [
+        0.18,
+        0.35
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.84,
+      "ci95": [
+        0.747,
+        0.92
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.77,
+      "ci95": [
+        0.69,
+        0.85
+      ]
+    }
+  },
+  "valid_call_rate": 1.0,
+  "hallucinated_id_rate": 0.01,
+  "tool_selection_accuracy": 0.698,
+  "exact_arg_match": 0.66,
+  "faithfulness": 0.965,
+  "decline_accuracy": 1.0,
+  "clarification_rate": 0.771,
+  "unrequested_write_rate": 0.002,
+  "steps_per_task": 1.55,
+  "harmful_rate": 0.034,
+  "wrong_write_rate": 0.004,
+  "routes": {
+    "local": 1.0,
+    "escalated": 0.0,
+    "fallback": 0.0
+  },
+  "latency_p50_s": 2.5,
+  "latency_p95_s": 7.23,
+  "tokens_per_conversation": 5317
+}
