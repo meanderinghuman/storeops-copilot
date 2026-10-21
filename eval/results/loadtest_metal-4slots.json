@@ -1,0 +1,68 @@
+{
+  "label": "metal-4slots",
+  "seconds_per_level": 120.0,
+  "levels": [
+    {
+      "users": 1,
+      "conversations": 57,
+      "errors": 0,
+      "conv_per_s": 0.471,
+      "p50_s": 1.79,
+      "p95_s": 5.4,
+      "mean_s": 2.12,
+      "routes": {
+        "local": 57
+      }
+    },
+    {
+      "users": 2,
+      "conversations": 60,
+      "errors": 0,
+      "conv_per_s": 0.492,
+      "p50_s": 3.46,
+      "p95_s": 11.09,
+      "mean_s": 4.05,
+      "routes": {
+        "local": 60
+      }
+    },
+    {
+      "users": 4,
+      "conversations": 125,
+      "errors": 0,
+      "conv_per_s": 0.974,
+      "p50_s": 3.46,
+      "p95_s": 9.31,
+      "mean_s": 4.0,
+      "routes": {
+        "local": 125
+      }
+    },
+    {
+      "users": 8,
+      "conversations": 132,
+      "errors": 0,
+      "conv_per_s": 1.028,
+      "p50_s": 6.63,
+      "p95_s": 15.06,
+      "mean_s": 7.5,
+      "routes": {
+        "local": 132
+      }
+    },
+    {
+      "users": 16,
+      "conversations": 128,
+      "errors": 0,
+      "conv_per_s": 0.975,
+      "p50_s": 15.05,
+      "p95_s": 31.58,
+      "mean_s": 15.72,
+      "routes": {
+        "local": 128
+      }
+    }
+  ],
+  "max_users_p95_under_target": 4,
+  "target_p95_s": 10.0
+}

@@ -1,0 +1,44 @@
+{
+  "label": "cpu-2slots",
+  "seconds_per_level": 120.0,
+  "levels": [
+    {
+      "users": 1,
+      "conversations": 13,
+      "errors": 0,
+      "conv_per_s": 0.104,
+      "p50_s": 6.91,
+      "p95_s": 34.15,
+      "mean_s": 9.59,
+      "routes": {
+        "local": 13
+      }
+    },
+    {
+      "users": 2,
+      "conversations": 14,
+      "errors": 0,
+      "conv_per_s": 0.111,
+      "p50_s": 10.81,
+      "p95_s": 43.33,
+      "mean_s": 17.93,
+      "routes": {
+        "local": 14
+      }
+    },
+    {
+      "users": 4,
+      "conversations": 23,
+      "errors": 0,
+      "conv_per_s": 0.153,
+      "p50_s": 22.73,
+      "p95_s": 45.96,
+      "mean_s": 24.31,
+      "routes": {
+        "local": 23
+      }
+    }
+  ],
+  "max_users_p95_under_target": 0,
+  "target_p95_s": 10.0
+}
