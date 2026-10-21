@@ -21,6 +21,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
 
+import httpx
+
 from datagen.agent import reset_writes, run_agent
 from datagen.runner import append_jsonl, read_jsonl
 from datagen.teacher import Teacher
@@ -61,10 +63,21 @@ def run(scenarios, model, base_url, api_key, db, scratch, workers, max_rounds=4,
 
         if gateway:
             return gateway_one(sc, tools)
+        start = time.monotonic()
         try:
             conv = run_agent(
                 chat, tools, sc["store_id"], sc["query"], ALL_TOOLS, max_rounds, sc.get("history")
             )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 500 and "parse tool call" in exc.response.text:
+                # llama-server rejects a malformed tool call with HTTP 500: the model's failure,
+                # scored as such (retrying at temperature 0 gives the same output).
+                conv = {"messages": [{"role": "user", "content": sc["query"]},
+                                     {"role": "assistant", "content": ""}],
+                        "calls": [], "finish": "invalid_output", "rounds": 0,
+                        "seconds": round(time.monotonic() - start, 2)}  # fmt: skip
+                return {"id": sc["id"], "conversation": conv, "score": score(sc, conv)}
+            return {"id": sc["id"], "api_error": f"{type(exc).__name__}: {exc}"[:300]}
         except Exception as exc:  # noqa: BLE001 - recorded, retried on the next run
             return {"id": sc["id"], "api_error": f"{type(exc).__name__}: {exc}"[:300]}
         conv["tokens"] = tokens["prompt"] + tokens["completion"] or None
