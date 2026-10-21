@@ -18,6 +18,8 @@ data/cache/
 data/gen/
 data/eval/
 data/kaggle_upload/
+data/runtime/
+data/*.log
 models/
 *.gguf
 *.safetensors

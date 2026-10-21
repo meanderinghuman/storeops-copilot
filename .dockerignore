@@ -1,0 +1,13 @@
+.venv
+.git
+data
+models
+eval
+train
+tests
+docs
+**/__pycache__
+.env
+*.gguf
+*.zip
+*.pdf
