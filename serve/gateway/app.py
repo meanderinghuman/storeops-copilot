@@ -20,10 +20,12 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict, deque
+from pathlib import Path
 
 import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 
@@ -33,6 +35,7 @@ from serve.gateway.copilot import Copilot
 from store.tools import StoreTools, ToolError
 
 log = logging.getLogger("copilot")
+WEB = Path(__file__).resolve().parents[1] / "web"
 
 
 class JsonFormatter(logging.Formatter):
@@ -127,18 +130,41 @@ def create_app(settings: Settings | None = None, copilot: Copilot | None = None)
             "reasons": out["escalation_reasons"], "seconds": out["seconds"],
             "tools": [t["name"] for t in out["trace"]], "pending": len(out["pending"]),
         }})  # fmt: skip
-        return {k: v for k, v in out.items() if k not in ("conversation", "local_conversation")}
+        resp = {k: v for k, v in out.items() if k not in ("conversation", "local_conversation")}
+        # This turn as structured messages (incl. tool calls and results), so a client can send it
+        # back as `history` for a follow-up like "yes, go ahead" and the model sees the item IDs.
+        msgs = out["conversation"]["messages"] if out["conversation"] else []
+        start = max((i for i, m in enumerate(msgs) if m["role"] == "user"), default=None)
+        resp["turn"] = (
+            msgs[start:]
+            if start is not None
+            else [
+                {"role": "user", "content": req.message},
+                {"role": "assistant", "content": out["answer"]},
+            ]
+        )
+        return resp
+
+    def listing(table: str, store_col: str, store_id: str | None, status: str) -> list[dict]:
+        q = (f"SELECT t.*, i.name FROM {table} t JOIN items i USING (item_id) WHERE t.status = ?"
+             + (f" AND t.{store_col} = ?" if store_id else "") + " ORDER BY t.created_at")  # fmt: skip
+        with sqlite3.connect(f"file:{tools.db_path}?mode=ro", uri=True) as conn:
+            conn.row_factory = sqlite3.Row
+            return [dict(r) for r in conn.execute(q, (status, store_id) if store_id else (status,))]
 
     @app.get("/v1/orders")
     def orders(
         store_id: str | None = None, status: str = "pending", _: str = Depends(auth)
     ) -> list:
-        with sqlite3.connect(f"file:{tools.db_path}?mode=ro", uri=True) as conn:
-            conn.row_factory = sqlite3.Row
-            q = "SELECT * FROM purchase_orders WHERE status = ?" + (
-                " AND store_id = ?" if store_id else ""
-            )
-            return [dict(r) for r in conn.execute(q, (status, store_id) if store_id else (status,))]
+        return listing("purchase_orders", "store_id", store_id, status)
+
+    @app.get("/v1/transfers")
+    def transfers(
+        store_id: str | None = None, status: str = "pending", _: str = Depends(auth)
+    ) -> list:
+        """Transfers touching the store (sending or receiving)."""
+        rows = listing("stock_transfers", "from_store", None, status)
+        return [r for r in rows if not store_id or store_id in (r["from_store"], r["to_store"])]
 
     def manager_action(fn, kind: str, action: str, ref: str) -> dict:
         try:
@@ -173,6 +199,12 @@ def create_app(settings: Settings | None = None, copilot: Copilot | None = None)
             tools.cancel_stock_transfer, "request_stock_transfer", "cancelled", transfer_id
         )
 
+    # Web UI: a static single-page app served by the gateway itself (same origin, no build step).
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(WEB / "index.html")
+
+    app.mount("/static", StaticFiles(directory=WEB), name="static")
     return app
 
 

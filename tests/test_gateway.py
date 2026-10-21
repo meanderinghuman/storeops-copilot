@@ -162,6 +162,9 @@ def test_api_chat_confirm_and_metrics(tools, name):
     r = c.post("/v1/chat", json={"store_id": STORE, "message": "order 6"})
     assert r.status_code == 200 and r.json()["pending"][0]["status"] == "pending"
     assert "conversation" not in r.json()
+    turn = r.json()["turn"]  # structured turn for follow-ups: user, tool calls + results, answer
+    assert turn[0] == {"role": "user", "content": "order 6"} and turn[-1]["role"] == "assistant"
+    assert any(m["role"] == "tool" and m["name"] == "search_items" for m in turn)
     assert [o["po_id"] for o in c.get("/v1/orders").json()] == ["PO-0001"]
     assert c.post("/v1/orders/PO-0001/confirm").json()["status"] == "confirmed"
     assert c.post("/v1/orders/PO-0001/confirm").status_code == 409  # already confirmed
@@ -225,3 +228,19 @@ def test_intent_rules():
     )
     assert check_write("request_stock_transfer", 2, "X", "have 2 X moved from CA_4", "") is None
     assert check_write("request_stock_transfer", 2, "X", "How many X at CA_4?", "") is not None
+
+
+def test_web_ui_and_listings(tools, name):
+    c = client_for(tools, script(search(name), [tc("create_purchase_order", item_id=ITEM, store_id=STORE,
+                                                   quantity=6)], "Staged {po_id}. Confirm it in the app."))  # fmt: skip
+    page = c.get("/")
+    assert page.status_code == 200 and "StoreOps Copilot" in page.text
+    for asset in ("/static/app.js", "/static/styles.css"):
+        assert c.get(asset).status_code == 200
+    c.post("/v1/chat", json={"store_id": STORE, "message": "order 6"})
+    orders = c.get("/v1/orders", params={"store_id": STORE}).json()
+    assert orders[0]["name"] == name  # listings carry the product name for the UI
+    tools.request_stock_transfer(ITEM, STORE, "CA_2", 1)
+    assert [
+        t["transfer_id"] for t in c.get("/v1/transfers", params={"store_id": "CA_2"}).json()
+    ] == ["TR-0001"]

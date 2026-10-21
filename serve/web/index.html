@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoreOps Copilot</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><path d='M9 12h14l-1.5 9h-11z' fill='none' stroke='white' stroke-width='2.2' stroke-linejoin='round'/><path d='M12.5 12a3.5 3.5 0 0 1 7 0' fill='none' stroke='white' stroke-width='2.2'/></svg>">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8"/><path d="M9 12h14l-1.5 9h-11z"/><path d="M12.5 12a3.5 3.5 0 0 1 7 0"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">StoreOps Copilot</div>
+          <div class="brand-sub">Inventory assistant</div>
+        </div>
+      </div>
+
+      <section>
+        <div class="label">Store</div>
+        <div class="stores" id="stores" role="tablist"></div>
+      </section>
+
+      <section>
+        <div class="label">Try asking</div>
+        <div class="examples" id="examples"></div>
+      </section>
+
+      <section class="approvals">
+        <div class="label">Waiting for your approval <span class="count" id="approval-count">0</span></div>
+        <div id="approvals"><div class="empty">Nothing pending</div></div>
+      </section>
+
+      <section class="status" id="status">
+        <div class="label">System</div>
+        <div class="status-row"><span class="dot" id="st-llm"></span>Local model <span class="muted" id="st-llm-text">…</span></div>
+        <div class="status-row"><span class="dot" id="st-esc"></span>Escalation <span class="muted" id="st-esc-text">…</span></div>
+        <div class="status-row"><span class="dot" id="st-db"></span>Store database <span class="muted" id="st-db-text">…</span></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="store-title">Store CA_3</h1>
+          <div class="subtitle">Ask about stock, sales, forecasts and ordering. Orders always wait for your approval.</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-value" id="s-req">0</div><div class="stat-label">requests</div></div>
+          <div class="stat"><div class="stat-value" id="s-local">–</div><div class="stat-label">answered locally</div></div>
+          <div class="stat"><div class="stat-value" id="s-lat">–</div><div class="stat-label">avg latency</div></div>
+          <button class="icon-btn" id="new-chat" title="New conversation" aria-label="New conversation">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="thread" id="thread">
+        <div class="welcome" id="welcome">
+          <h2>How can I help with the store today?</h2>
+          <p>I look things up with the store's tools, so every number comes from the inventory system.
+            Questions I can't handle reliably on this laptop are passed to a larger model.</p>
+          <div class="capabilities">
+            <div><b>Stock &amp; sales</b><span>on hand, in transit, weekly sales</span></div>
+            <div><b>Forecasts</b><span>expected demand with a low / high range</span></div>
+            <div><b>Ordering</b><span>suggested quantities, draft purchase orders</span></div>
+            <div><b>Promotions &amp; transfers</b><span>upcoming deals, moving stock between stores</span></div>
+          </div>
+        </div>
+      </div>
+
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="Ask about a product, e.g. “Will we run out of bananas before the weekend?”" autocomplete="off"></textarea>
+        <button type="submit" id="send" aria-label="Send">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+      <div class="footnote">Fine-tuned Qwen2.5-1.5B on Apple Metal · safety rules enforced by the gateway · <a href="/docs" target="_blank">API</a></div>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
