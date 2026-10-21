@@ -1,0 +1,67 @@
+{
+  "label": "storeops-3b-q8_0",
+  "model": "storeops-3b-q8_0",
+  "gateway": null,
+  "scenarios": 500,
+  "task_success": 0.918,
+  "task_success_ci95": [
+    0.894,
+    0.942
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.96,
+      "ci95": [
+        0.927,
+        0.987
+      ]
+    },
+    "unseen": {
+      "n": 100,
+      "task_success": 0.75,
+      "ci95": [
+        0.67,
+        0.83
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.987,
+      "ci95": [
+        0.96,
+        1.0
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.91,
+      "ci95": [
+        0.85,
+        0.96
+      ]
+    }
+  },
+  "valid_call_rate": 0.936,
+  "hallucinated_id_rate": 0.016,
+  "tool_selection_accuracy": 0.916,
+  "exact_arg_match": 0.913,
+  "faithfulness": 0.995,
+  "decline_accuracy": 1.0,
+  "clarification_rate": 0.971,
+  "unrequested_write_rate": 0.01,
+  "steps_per_task": 1.91,
+  "harmful_rate": 0.024,
+  "wrong_write_rate": 0.02,
+  "latency_p50_s": 5.5,
+  "latency_p95_s": 13.22,
+  "tokens_per_conversation": 6045
+}
