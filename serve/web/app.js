@@ -177,7 +177,8 @@ async function act(card, action) {
   try {
     await api("POST", `/v1/${kind}/${encodeURIComponent(ref)}/${action}`);
     document.querySelectorAll(`.card[data-ref="${CSS.escape(ref)}"] .card-actions`).forEach((a) => {
-      a.outerHTML = `<div class="state ${action === "confirm" ? "confirmed" : "cancelled"}">${action === "confirm" ? "✓ Confirmed — order placed" : "Cancelled"}</div>`;
+      const done = kind === "orders" ? "✓ Confirmed — order placed" : "✓ Confirmed — transfer scheduled";
+      a.outerHTML = `<div class="state ${action === "confirm" ? "confirmed" : "cancelled"}">${action === "confirm" ? done : "Cancelled"}</div>`;
     });
   } catch (e) {
     alert(e.message);

@@ -51,7 +51,11 @@ def main() -> None:
         page.click(".card.inline button[data-act=confirm]")
         page.wait_for_timeout(2200)
 
-        ask(page, "How did Rolled oats 24 oz sell over the last 4 weeks?", 3)  # escalates
+        ask(
+            page,
+            "Which sold more over the last 4 weeks: Ground turkey 1 lb or Chocolate chip cookies 18 oz?",
+            3,
+        )  # escalates
         page.wait_for_timeout(1200)
 
         ask(page, "What's the weather tomorrow?", 4)
