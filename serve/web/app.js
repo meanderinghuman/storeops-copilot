@@ -9,12 +9,13 @@ const STORES = [
   { id: "CA_4", name: "Riverside Plaza" },
 ];
 const storeName = (id) => (STORES.find((s) => s.id === id) || { name: id }).name;
-// Each example was checked to be answered locally 3/3 times (others work too, via escalation).
+// Each example was checked to be answered locally by the 3B model 3/3 times.
 const EXAMPLES = [
   "Will we run out of Fresh bananas bunch 2 lb before the weekend?",
+  "How did Rolled oats 24 oz sell over the last 4 weeks?",
   "Should I order more Toilet paper 12-roll pack?",
   "Order 24 Dish soap liquid 20 oz.",
-  "How many Paper towels 6-pack do we have?",
+  "Move 4 Canned black beans 15 oz from CA_4 over here.",
   "Order more paper towels.",
   "Any promotions coming up in the next 7 days?",
   "What's the weather tomorrow?",

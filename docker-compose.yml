@@ -16,7 +16,7 @@ services:
     env_file: .env  # escalation endpoint + key, GATEWAY_API_KEY
     environment:
       LLM_BASE_URL: http://host.docker.internal:8080/v1
-      LLM_MODEL: ${LLM_MODEL:-storeops-v2-q8_0}
+      LLM_MODEL: ${LLM_MODEL:-storeops-3b-q4_k_m}
       FORECAST_URL: http://forecast:8001
       STORE_DB_PATH: /app/data/runtime/store.db
     volumes:

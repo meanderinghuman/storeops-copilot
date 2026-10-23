@@ -1,6 +1,7 @@
 # One command starts everything: llama-server natively on the Mac (Metal), the rest in Docker.
-MODEL ?= models/storeops-v2-q8_0.gguf
-ALIAS ?= storeops-v2-q8_0
+# Served model: the 3B student (93.4% with the gateway, all local). The 1.5B: MODEL=models/storeops-v2-q8_0.gguf ALIAS=storeops-v2-q8_0
+MODEL ?= models/storeops-3b-q4_k_m.gguf
+ALIAS ?= storeops-3b-q4_k_m
 # 4 slots doubled throughput vs 1 in the load test
 SLOTS ?= 4
 LLM_LOG = data/llama-server.log

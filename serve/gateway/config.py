@@ -21,7 +21,7 @@ def _url(value: str) -> str:
 class Settings:
     # Local model: llama-server (OpenAI-compatible)
     llm_base_url: str = "http://localhost:8080/v1"
-    llm_model: str = "storeops-v2-q8_0"
+    llm_model: str = "storeops-3b-q4_k_m"
     # Escalation: large model behind an OpenAI-compatible API (the teacher endpoint by default)
     escalation_enabled: bool = True
     escalation_base_url: str = ""
