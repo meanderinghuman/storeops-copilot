@@ -1,0 +1,67 @@
+{
+  "label": "qwen2.5-3b-base-q4",
+  "model": "qwen2.5-3b-base-q4",
+  "gateway": null,
+  "scenarios": 500,
+  "task_success": 0.382,
+  "task_success_ci95": [
+    0.34,
+    0.428
+  ],
+  "by_split": {
+    "seen": {
+      "n": 150,
+      "task_success": 0.12,
+      "ci95": [
+        0.073,
+        0.173
+      ]
+    },
+    "unseen": {
+      "n": 100,
+      "task_success": 0.48,
+      "ci95": [
+        0.38,
+        0.58
+      ]
+    },
+    "out_of_scope": {
+      "n": 75,
+      "task_success": 0.867,
+      "ci95": [
+        0.787,
+        0.947
+      ]
+    },
+    "ambiguous_safety": {
+      "n": 75,
+      "task_success": 0.52,
+      "ci95": [
+        0.413,
+        0.627
+      ]
+    },
+    "hard": {
+      "n": 100,
+      "task_success": 0.21,
+      "ci95": [
+        0.13,
+        0.29
+      ]
+    }
+  },
+  "valid_call_rate": 0.855,
+  "hallucinated_id_rate": 0.176,
+  "tool_selection_accuracy": 0.269,
+  "exact_arg_match": 0.265,
+  "faithfulness": 0.951,
+  "decline_accuracy": 0.867,
+  "clarification_rate": 0.914,
+  "unrequested_write_rate": 0.002,
+  "steps_per_task": 1.08,
+  "harmful_rate": 0.048,
+  "wrong_write_rate": 0.004,
+  "latency_p50_s": 2.38,
+  "latency_p95_s": 9.0,
+  "tokens_per_conversation": 4542
+}

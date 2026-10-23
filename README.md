@@ -2,24 +2,24 @@
 
 # 🛒 StoreOps Copilot
 
-**A fine-tuned 1.5B model that answers store managers' inventory questions by calling store tools,
-running locally on a MacBook, with a safety gateway that escalates hard requests to a large model.**
+**A fine-tuned 3B model that answers store managers' inventory questions by calling store tools,
+running locally on a MacBook, with a safety gateway that escalates the hardest requests to a large model.**
 
 [![CI](https://github.com/meanderinghuman/storeops-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/meanderinghuman/storeops-copilot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
-[![Model on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-storeops--copilot--qwen2.5--1.5b-FFD21E)](https://huggingface.co/sidpnyc/storeops-copilot-qwen2.5-1.5b-v2)
+[![Model on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-storeops--copilot--qwen2.5--3b-FFD21E)](https://huggingface.co/sidpnyc/storeops-copilot-qwen2.5-3b)
 ![llama.cpp](https://img.shields.io/badge/llama.cpp-Apple%20Metal-000000?logo=apple&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-gateway-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Grafana](https://img.shields.io/badge/Grafana-dashboards-F46800?logo=grafana&logoColor=white)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
 
-![Task success](https://img.shields.io/badge/task%20success-91.4%25-brightgreen)
-![Answered locally](https://img.shields.io/badge/answered%20locally-75%25-brightgreen)
-![Harmful actions](https://img.shields.io/badge/harmful%20actions-0.8%25-brightgreen)
-![Cost](https://img.shields.io/badge/API%20cost-%E2%88%9268%25-brightgreen)
+![Task success](https://img.shields.io/badge/task%20success-95.4%25-brightgreen)
+![Answered locally](https://img.shields.io/badge/answered%20locally-94%25-brightgreen)
+![Harmful actions](https://img.shields.io/badge/harmful%20actions-0.4%25-brightgreen)
+![Cost](https://img.shields.io/badge/API%20cost-%E2%88%9294%25-brightgreen)
 
-<img src="docs/demo.gif" width="900" alt="Demo: a run-out question answered locally from stock and forecast tools, 'yes, go ahead' staging a purchase order that the manager confirms, a sales question escalated to the large model, and an out-of-scope question declined">
+<img src="docs/demo.gif" width="900" alt="Demo: a run-out question answered locally from stock and forecast tools, 'yes, go ahead' staging a purchase order that the manager confirms, a two-product comparison escalated to the large model, and an out-of-scope question declined">
 
 </div>
 
@@ -31,12 +31,12 @@ running locally on a MacBook, with a safety gateway that escalates hard requests
 
 | | |
 | --- | --- |
-| 🎯 **91.4% task success** on 500 held-out scenarios | stores and tools never seen in training |
-| 💻 **75% of requests answered locally**, for $0 | fine-tuned Qwen2.5-1.5B on Apple Metal |
-| 🛡️ **0.8% harmful actions**, same as the large model | safety rules enforced in code, not in the prompt |
-| ⚡ **3.2 s median** per conversation | faster than sending everything to the API (3.8 s) |
-| 💸 **68% lower API cost** | only the hard 25% goes to the large model |
-| 📈 **29% → 67%** from fine-tuning alone | execution-verified training data, QLoRA on a free T4 |
+| 🎯 **95.4% task success** on 500 held-out scenarios | stores and tools never seen in training |
+| 💻 **94% of requests answered locally**, for $0 | fine-tuned Qwen2.5-3B on Apple Metal |
+| 🛡️ **0.4% harmful actions**, half the large model's rate | safety rules enforced in code, not in the prompt |
+| ⚡ **3.7 s median** per conversation | on par with sending everything to the API (3.8 s) |
+| 💸 **94% lower API cost** | only the hardest 6% goes to the large model |
+| 📈 **38% → 90%** from fine-tuning alone | execution-verified training data, QLoRA on a free T4 |
 
 ---
 
@@ -50,7 +50,7 @@ sequenceDiagram
     actor M as Store manager
     participant UI as Web UI
     participant G as Gateway
-    participant L as Local model<br/>(Qwen2.5-1.5B, Metal)
+    participant L as Local model<br/>(Qwen2.5-3B, Metal)
     participant T as Store tools
     participant B as Large model API
     M->>UI: "Will we run out of bananas before the weekend?"
@@ -65,7 +65,7 @@ sequenceDiagram
     T-->>G: stock 8, forecast 5.2 (high 10.3), suggest 6
     L-->>G: final answer
     G->>G: every number grounded in a tool result?
-    alt answer can't be trusted
+    alt answer can't be trusted (6% of requests)
         G->>B: re-run the request on the large model
         B-->>G: answer
     end
@@ -81,22 +81,24 @@ sequenceDiagram
 2. **The gateway sends it to the local model** with the system prompt and the store tools' JSON
    Schemas. The model runs natively on the Mac's GPU through `llama-server`.
 3. **The model proposes tool calls**: search the catalog, check stock, pull sales, forecast demand,
-   get a reorder suggestion, draft an order. It never runs anything itself.
+   get a reorder suggestion, draft an order or a transfer between stores. It never runs anything itself.
 4. **The gateway checks every call** before running it: the arguments must match the schema, the
    product ID must come from a search in this conversation (no invented IDs), an order must match
-   what the manager asked for, and quantities must be reasonable.
+   what the manager asked for, and quantities must be reasonable. A refused call goes back to the
+   model with the reason, and the model usually corrects itself.
 5. **The tools run against the store database** (real Walmart M5 sales data) and the forecast
    service. Reorder quantities are calculated in code, so the model never does arithmetic on orders.
 6. **The gateway checks the answer.** Every number must appear in a tool result. If anything looks
-   wrong (a refused call, an error, a made-up number, too many steps), anything the local attempt
-   drafted is cancelled and the request is re-run on a large model API. 75% of requests never need it.
+   wrong (an unrecovered refusal or error, a made-up number, too many steps), anything the local
+   attempt drafted is cancelled and the request is re-run on a large model API. 94% of requests
+   never need it.
 7. **Orders are only ever drafts.** They wait in an approval queue; only the manager's **Confirm**
    button places them. The model has no tool that can confirm anything.
 8. **Everything is observable:** each answer shows its steps and route in the UI, and Prometheus +
    Grafana track latency, local vs escalated share, refusals and the order lifecycle.
 
-<p align="center"><img src="docs/screens/chat_light.png" width="820" alt="A conversation: stock tiles, forecast range and reorder math behind an answer, a follow-up that drafts a purchase order waiting for approval, and a clarifying question for a vague request"></p>
-<p align="center"><sub>Every answer shows how it was reached. <a href="docs/screens/chat_dark.png">Dark mode</a> · <a href="docs/screens/welcome_light.png">welcome screen</a>. Store names are fictional labels for the dataset's anonymized California stores.</sub></p>
+<p align="center"><img src="docs/screens/chat_dark.png" width="820" alt="A sales question answered with a weekly chart, then a transfer request where the gateway refuses an invented item ID, the model searches the catalog, and stages the right transfer, which the manager confirms"></p>
+<p align="center"><sub>Above: the gateway refuses an invented product ID, the model searches and stages the right transfer, and the manager confirms. <a href="docs/screens/chat_light.png">Light mode</a> · <a href="docs/screens/welcome_light.png">welcome screen</a>. Store names are fictional labels for the dataset's anonymized California stores.</sub></p>
 
 ## How it was built
 
@@ -104,7 +106,7 @@ sequenceDiagram
 flowchart LR
   A[1 · Store backend<br/>M5 sales → SQLite<br/>8 tools + schemas] --> B[2 · Training data<br/>teacher answers 2,797<br/>questions with real<br/>tool execution]
   B --> C[3 · Filters<br/>2,645 kept<br/>94.6%]
-  C --> D[4 · QLoRA fine-tune<br/>Qwen2.5-1.5B<br/>free Kaggle T4]
+  C --> D[4 · QLoRA fine-tune<br/>Qwen2.5 1.5B and 3B<br/>free Kaggle T4]
   D --> E[5 · Evaluate<br/>500 held-out<br/>scenarios]
   E --> F[6 · Serve<br/>llama.cpp on Metal<br/>+ safety gateway]
 ```
@@ -120,9 +122,10 @@ flowchart LR
 3. **Automatic filters** keep a conversation only if every number in the answer comes from a tool
    result, orders are staged only when asked (and end with a confirmation request), vague requests
    get a clarifying question and off-topic ones get no tool call: 2,645 kept (94.6%).
-4. **Fine-tuning** ([`train/`](train/)): QLoRA on Qwen2.5-1.5B-Instruct with Unsloth on a free
-   Kaggle T4, loss on the assistant's turns only, 2 epochs in 2.6 hours, plus 500 general
-   function-calling examples from [xLAM](https://huggingface.co/datasets/Salesforce/xlam-function-calling-60k).
+4. **Fine-tuning** ([`train/`](train/)): QLoRA with Unsloth on a free Kaggle T4, loss on the
+   assistant's turns only, 2 epochs, plus 500 general function-calling examples from
+   [xLAM](https://huggingface.co/datasets/Salesforce/xlam-function-calling-60k). Same data and recipe
+   for Qwen2.5-1.5B (2.6 h) and Qwen2.5-3B (4.7 h).
 5. **Evaluation** ([`eval/`](eval/)): [500 scenarios](eval/TESTSET.md) frozen in git before
    training, at stores and with two tools the model never saw, plus a hard split (typos, two products
    in one message, follow-ups). A scripted perfect agent scores 100%, which checks the scorer itself.
@@ -136,19 +139,37 @@ flowchart LR
 | System | Task success (95% CI) | Answered locally | Harmful actions¹ | p50 / p95 latency | API cost / 1k conversations² |
 | --- | --- | --- | --- | --- | --- |
 | Large API model (DeepSeek-V4.1-Flash) for everything | 100% | 0% | 0.8% | 3.8 s / 10.2 s | $1.07–2.14 |
-| Base Qwen2.5-1.5B, local | 28.8% (24.8–33.0) | 100% | 4.2% | 1.0 s / 2.7 s | $0 |
-| Fine-tuned 1.5B, local | 67.4% (63.2–71.4) | 100% | 7.6% | 2.4 s / 6.7 s | $0 |
-| Fine-tuned 1.5B + gateway guards | 69.0% (65.0–73.0) | 100% | 3.4% | 2.5 s / 7.2 s | $0 |
-| **Fine-tuned 1.5B + gateway + escalation** | **91.4% (89.0–93.8)** | **75%** | **0.8%** | **3.2 s / 9.1 s** | **$0.34–0.68** |
+| Base Qwen2.5-3B, local | 38.2% (34.0–42.8) | 100% | 4.8% | 2.4 s / 9.0 s | $0 |
+| Fine-tuned 3B, local | 90.4% (87.6–93.0) | 100% | 1.8% | 3.7 s / 9.4 s | $0 |
+| Fine-tuned 3B + gateway guards | 93.4% (91.2–95.6) | 100% | 1.2% | 3.9 s / 9.8 s | $0 |
+| **Fine-tuned 3B + gateway + escalation** | **95.4% (93.4–97.2)** | **94%** | **0.4%** | **3.7 s / 10.6 s** | **$0.06–0.12** |
 
 ¹ An order or transfer nobody asked for or with the wrong item or quantity, or a number in the
 answer that no tool returned. Orders are only ever drafts, so none of them executes without the
 manager. ² DeepSeek list prices, Oct 2026 ($0.15–0.30 / M input, $0.60–1.20 / M output) and measured
 tokens per conversation.
 
-By scenario type, the full system scores **98%** on everyday questions, **94%** on the hard split,
-**100%** on off-topic requests (declined without a tool call), **89%** on vague and "should I
-order?" requests, and **74%** on the two tools held out of training.
+By scenario type, the full system scores **98%** on everyday questions, **98%** on the hard split
+(typos, two products, follow-ups), **100%** on off-topic requests (declined without a tool call),
+**100%** on vague and "should I order?" requests, and **82%** on the two tools held out of training.
+It never placed an order nobody asked for.
+
+### 1.5B vs 3B: same data, same recipe
+
+| | Qwen2.5-1.5B | Qwen2.5-3B |
+| --- | --- | --- |
+| Base model, untrained | 28.8% | 38.2% |
+| Fine-tuned, alone | 67.4% (8-bit) | **90.4%** (4-bit) |
+| + gateway guards | 69.0% | **93.4%** |
+| + gateway + escalation | 91.4% | **95.4%** |
+| Answered locally (full system) | 75% | **94%** |
+| Loss from 4-bit quantization | −8 points | −1.4 points |
+| Served file / median latency | 1.65 GB / 3.2 s | 1.93 GB / 3.7 s |
+| Training time (Kaggle T4) | 2.6 h | 4.7 h |
+
+Doubling the model size, with no other change, took the fine-tuned model from 67% to 90%, made it
+robust to 4-bit quantization, and cut the share of requests that need the large model from 25% to
+6% for half a second more per conversation. The 3B is what `make up` serves.
 
 <details>
 <summary><b>Every model and precision tested</b></summary>
@@ -156,15 +177,18 @@ order?" requests, and **74%** on the two tools held out of training.
 | Model | Task success | Everyday | Held-out tools | Off-topic | Vague / safety | Hard | Unrequested orders | Harmful | p50 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DeepSeek-V4.1-Flash (API) | 100% | 100 | 100 | 100 | 100 | 100 | 0% | 0.8% | 3.8 s |
+| Base 3B Q4_K_M | 38.2% | 12 | 48 | 87 | 52 | 21 | 0.2% | 4.8% | 2.4 s |
+| **Fine-tuned 3B Q4_K_M** (served) | **90.4%** | 98 | 62 | 100 | 100 | 93 | 0.4% | 1.8% | 3.7 s |
+| Fine-tuned 3B Q8_0 | 91.8% | 96 | 75 | 100 | 99 | 91 | 1.0% | 2.4% | 5.5 s |
 | Base 1.5B F16 | 31.2% | 3 | 41 | 88 | 43 | 13 | 0% | 1.4% | 2.4 s |
 | Base 1.5B Q4_K_M | 28.8% | 3 | 29 | 97 | 37 | 10 | 0% | 4.2% | 1.0 s |
-| Fine-tuned v1 F16 | 65.6% | 63 | 32 | 99 | 64 | 79 | 2.0% | 7.8% | 3.9 s |
-| Fine-tuned v1 Q4_K_M | 52.2% | 44 | 27 | 100 | 55 | 52 | 3.8% | 7.8% | 1.9 s |
-| Fine-tuned v2 F16 | 67.2% | 66 | 27 | 100 | 83 | 73 | 0.8% | 6.0% | 3.7 s |
-| **Fine-tuned v2 Q8_0** (served) | **67.4%** | 67 | 25 | 100 | 84 | 74 | 0.8% | 7.6% | 2.4 s |
-| Fine-tuned v2 Q6_K | 62.8% | 59 | 22 | 100 | 76 | 71 | 1.0% | 8.0% | 2.0 s |
-| Fine-tuned v2 Q5_K_M | 64.0% | 62 | 25 | 100 | 81 | 66 | 0.8% | 6.6% | 2.0 s |
-| Fine-tuned v2 Q4_K_M | 59.4% | 51 | 21 | 100 | 76 | 67 | 0.2% | 5.4% | 1.8 s |
+| Fine-tuned 1.5B v1 F16 | 65.6% | 63 | 32 | 99 | 64 | 79 | 2.0% | 7.8% | 3.9 s |
+| Fine-tuned 1.5B v1 Q4_K_M | 52.2% | 44 | 27 | 100 | 55 | 52 | 3.8% | 7.8% | 1.9 s |
+| Fine-tuned 1.5B v2 F16 | 67.2% | 66 | 27 | 100 | 83 | 73 | 0.8% | 6.0% | 3.7 s |
+| Fine-tuned 1.5B v2 Q8_0 | 67.4% | 67 | 25 | 100 | 84 | 74 | 0.8% | 7.6% | 2.4 s |
+| Fine-tuned 1.5B v2 Q6_K | 62.8% | 59 | 22 | 100 | 76 | 71 | 1.0% | 8.0% | 2.0 s |
+| Fine-tuned 1.5B v2 Q5_K_M | 64.0% | 62 | 25 | 100 | 81 | 66 | 0.8% | 6.6% | 2.0 s |
+| Fine-tuned 1.5B v2 Q4_K_M | 59.4% | 51 | 21 | 100 | 76 | 67 | 0.2% | 5.4% | 1.8 s |
 
 Summaries for every row: [`eval/results/`](eval/results/) (first-iteration runs in
 [`schema_v1/`](eval/results/schema_v1/)).
@@ -179,7 +203,7 @@ Summaries for every row: [`eval/results/`](eval/results/) (first-iteration runs 
 | ✍️ Actions match the request | An order needs ordering language in the manager's message (or a "yes" to an offered order); "send / move … to another store" must be a transfer. Checked on 645 real orders: 1 false block. |
 | 📦 Reasonable quantities | Orders above max(5 × high-case demand over lead time + review, 4 packs) are refused. |
 | 🧯 Bad output can't break anything | One retry for malformed tool calls; at most 4 tool rounds and a time limit per request. |
-| ↗️ Untrustworthy answers don't reach the manager | Refused calls, errors, limits or made-up numbers → the local attempt's drafts are cancelled and the request re-runs on the large model; a safe fallback reply if that fails too. |
+| ↗️ Untrustworthy answers don't reach the manager | Unrecovered refusals or errors, limits or made-up numbers → the local attempt's drafts are cancelled and the request re-runs on the large model; a safe fallback reply if that fails too. |
 | 👀 Read-only reads | Read tools use a read-only database connection. |
 
 Plus API-key auth, per-client rate limiting, JSON logs with request IDs, `/health`, `/ready`, and
@@ -188,8 +212,8 @@ scripted fake model) run in CI on every push.
 
 ## What went wrong, and what fixed it
 
-The first fine-tuned model scored 52% (at 4-bit). Reading the failures and testing one hypothesis
-at a time led to the changes that mattered most:
+The first fine-tuned model (1.5B) scored 52% at 4-bit. Reading the failures and testing one
+hypothesis at a time led to the changes that mattered most:
 
 1. **The tool schema leaked an example ID.** The `item_id` description said "e.g. HOUSEHOLD_1_118",
    and the model put that exact ID into 70 tool calls instead of searching. Removing it cut invented
@@ -202,26 +226,30 @@ at a time led to the changes that mattered most:
 3. **"Should I order X?" drafted orders.** 300 extra training conversations that mention ordering but
    must not order brought unrequested orders from 3.8% to under 1%, and lifted the vague / safety
    scenarios from 55% to 84%.
-4. **4-bit quantization erased half the fine-tuning gain.** The base model loses nothing at 4-bit, but
-   the fine-tuned model lost 14 points. A precision sweep (4/5/6/8/16-bit) showed 8-bit matches full
-   precision (67.4% vs 67.2%) at half the size and 1.6× the speed, so 8-bit is what's served.
-5. **The gateway turns the remaining failures into safe ones.** The "search first" rule triggers most
-   escalations, and a write-intent rule (added after finding 8 transfers turned into purchase orders
-   and 3 stock checks that ordered) cut wrong orders from 2.6% to 0.4%.
+4. **4-bit quantization erased half of the 1.5B's fine-tuning gain.** The base model loses nothing at
+   4-bit, but the fine-tuned 1.5B lost 14 points; a precision sweep (4/5/6/8/16-bit) showed 8-bit
+   matched full precision. The 3B, trained the same way, loses only 1.4 points at 4-bit.
+5. **The gateway turns the remaining failures into safe ones.** The "search first" rule lets the model
+   correct invented IDs (held-out tools: 62% → 77% for the 3B), and a write-intent rule (added after
+   finding transfers turned into purchase orders and stock checks that ordered) cut wrong orders
+   from 2.6% to 0.4% for the 1.5B.
+6. **Then size: the same data on a 3B model** went from 67% to 90% on its own, with the base 3B at
+   38%, so most of that is the fine-tuning on a bigger model, not a bigger model alone.
 
-<p align="center"><img src="docs/loss_curve_v2.png" width="460" alt="Training and validation loss of the second fine-tuning run"></p>
+<p align="center"><img src="docs/loss_curve_3b.png" width="440" alt="Training and validation loss of the 3B run"> <img src="docs/loss_curve_v2.png" width="440" alt="Training and validation loss of the 1.5B run"></p>
 
 ## Performance
 
-Measured on an Apple M5 MacBook Pro (10-core GPU, 24 GB):
+Measured on an Apple M5 MacBook Pro (10-core GPU, 24 GB). The served 3B (Q4_K_M) answers a
+conversation in **3.7 s at the median** (p95 9.4 s) on its own. GPU vs CPU, measured with the 1.5B:
 
 | | GPU (Metal) | CPU only |
 | --- | --- | --- |
-| Prompt processing (1.5B, 4-bit) | **3,117 tokens/s** | 104 tokens/s |
+| Prompt processing | **3,117 tokens/s** | 104 tokens/s |
 | Generation | **114 tokens/s** | 65 tokens/s |
 | One user, per conversation (p50 / p95) | **1.8 s / 5.4 s** | 6.9 s / 34 s |
 
-Load test (real test-set questions, concurrent users, 2 minutes per level, zero errors):
+Load test with the 1.5B (real test-set questions, concurrent users, 2 minutes per level, zero errors):
 
 | Setup | Users | p50 | p95 | Conversations / s |
 | --- | --- | --- | --- | --- |
@@ -230,9 +258,9 @@ Load test (real test-set questions, concurrent users, 2 minutes per level, zero 
 | Metal, 4 slots | 16 | 15.1 s | 31.6 s | 0.98 |
 | CPU only, 2 slots | 4 | 22.7 s | 46.0 s | 0.15 |
 
-One MacBook serves about 1 conversation per second (~3,500 an hour) with 4 parallel slots. The
-system prompt and tool schemas (~1,650 tokens) are shared by every request and stay in llama.cpp's
-prompt cache, which is a large part of why local latency stays low.
+With 4 parallel slots a MacBook serves about 1 conversation per second. The system prompt and tool
+schemas (~1,650 tokens) are shared by every request and stay in llama.cpp's prompt cache, which is a
+large part of why local latency stays low.
 
 ---
 
@@ -273,6 +301,14 @@ no API key is needed).
 ### 4. Download the fine-tuned model
 
 ```bash
+uvx --from huggingface_hub hf download sidpnyc/storeops-copilot-qwen2.5-3b \
+    storeops-3b-q4_k_m.gguf --local-dir models
+```
+
+On a Mac with 8 GB of RAM, use the smaller 1.5B instead (and start it in step 6 with
+`make up MODEL=models/storeops-v2-q8_0.gguf ALIAS=storeops-v2-q8_0`):
+
+```bash
 uvx --from huggingface_hub hf download sidpnyc/storeops-copilot-qwen2.5-1.5b-v2 \
     storeops-v2-q8_0.gguf --local-dir models
 ```
@@ -283,7 +319,7 @@ uvx --from huggingface_hub hf download sidpnyc/storeops-copilot-qwen2.5-1.5b-v2 
 cp .env.example .env
 ```
 
-Out of the box the copilot runs **local-only**: requests the small model can't handle get a polite
+Out of the box the copilot runs **local-only**: the few requests the model can't handle get a polite
 "couldn't complete" instead of escalating. To enable escalation, set `ESCALATION_BASE_URL`,
 `ESCALATION_API_KEY` and `ESCALATION_MODEL` in `.env` to any OpenAI-compatible endpoint (for example
 DeepSeek's API or OpenRouter).
@@ -321,7 +357,7 @@ uv run pytest
 | Teacher answers with real tool execution | `uv run python -m datagen.generate --model <teacher>` |
 | Build the training mix | `uv run --group tokenize python -m datagen.mix` |
 | Render with the chat template | `uv run --group tokenize python -m train.render` |
-| Fine-tune | upload `data/kaggle_upload/` to Kaggle, run [`train/kaggle_train.ipynb`](train/kaggle_train.ipynb) |
+| Fine-tune | upload `data/kaggle_upload/` to Kaggle, run [`train/kaggle_train_3b.ipynb`](train/kaggle_train_3b.ipynb) (or [`kaggle_train.ipynb`](train/kaggle_train.ipynb) for 1.5B) |
 | Build the test sets | `uv run python -m eval.build_testset` and `uv run python -m eval.build_hard` |
 | Score a model | `uv run python -m eval.run --model <name> --base-url http://localhost:8080/v1 --api-key none` |
 | Score the full system | add `--gateway escalation` |
@@ -335,7 +371,7 @@ Steps 1–2 need an OpenAI-compatible endpoint for the large models (`TEACHER_*`
 ```
 store/       store database builder, the 8 tools, forecast service, system prompt
 datagen/     question generation, agent loop, filters, training mix
-train/       chat-template rendering and the Kaggle QLoRA notebooks
+train/       chat-template rendering and the Kaggle QLoRA notebooks (1.5B, 3B)
 eval/        test sets, scorer, evaluation runner, results
 serve/       gateway (FastAPI), web UI, Prometheus and Grafana config
 loadtest/    concurrent-user load test
@@ -344,7 +380,12 @@ tests/       78 tests: tools, forecast, data pipeline, scorer, gateway safety
 
 ## Data and licenses
 
-Sales data: M5 Forecasting (Walmart) via Kaggle; the raw files are not redistributed here. Product
-names, inventory, promotions and store names are synthetic. The large models used for data
-generation (DeepSeek-V4.1-Flash, GLM-5.3) were accessed through Virginia Tech's ARC LLM API. Base
-model: Qwen2.5-1.5B-Instruct (Apache 2.0). Code: MIT.
+- **Code:** MIT.
+- **Models:** the 3B ([`sidpnyc/storeops-copilot-qwen2.5-3b`](https://huggingface.co/sidpnyc/storeops-copilot-qwen2.5-3b))
+  inherits the [Qwen Research License](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE)
+  (research and non-commercial use); the 1.5B ([`sidpnyc/storeops-copilot-qwen2.5-1.5b-v2`](https://huggingface.co/sidpnyc/storeops-copilot-qwen2.5-1.5b-v2))
+  is Apache 2.0.
+- **Data:** M5 Forecasting (Walmart) via Kaggle; the raw files are not redistributed here. Product
+  names, inventory, promotions and store names are synthetic.
+- **Large models** used for data generation and escalation (DeepSeek-V4.1-Flash, GLM-5.3) were
+  accessed through Virginia Tech's ARC LLM API.

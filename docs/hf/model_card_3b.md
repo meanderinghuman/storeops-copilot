@@ -1,5 +1,7 @@
 ---
-license: apache-2.0
+license: other
+license_name: qwen-research
+license_link: https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE
 base_model: Qwen/Qwen2.5-3B-Instruct
 tags:
 - gguf
@@ -73,3 +75,9 @@ write-safety 100%, hard (typos, two products, follow-ups) 93%. Harmful actions 1
 - Meant to run behind a gateway that validates calls (see the GitHub repo). Never let it place
   orders without human confirmation.
 - Product data is synthetic (real Walmart M5 sales with generated names); not evaluated on real users.
+
+## License
+
+This model is a derivative of Qwen2.5-3B-Instruct and is released under the
+[Qwen Research License](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE)
+(research and non-commercial use). The 1.5B version is Apache 2.0.
