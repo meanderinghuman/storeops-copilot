@@ -29,7 +29,7 @@ down: llm-stop  ## stop everything
 	docker compose down
 
 llm-stop:
-	-pkill -f "llama-server -m" || true
+	-pkill -f "[l]lama-server -m" || true
 
 logs:
 	docker compose logs -f gateway

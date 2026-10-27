@@ -8,10 +8,10 @@ mkdir -p data/loadtest && cp data/store.db data/loadtest/store.db
 STORE_DB_PATH=data/loadtest/store.db ESCALATION_ENABLED=false LLM_MODEL=storeops-v2-q8_0 RATE_LIMIT_PER_MIN=100000 \
   uv run uvicorn serve.gateway.app:app --port 8010 --log-level warning > data/loadtest-gateway.log 2>&1 &
 GW=$!
-trap 'kill $GW; pkill -f "llama-server -m"' EXIT
+trap 'kill $GW; pkill -f "[l]lama-server -m"' EXIT
 run() {  # label, ngl, slots, users...
   local label=$1 ngl=$2 slots=$3; shift 3
-  pkill -f "llama-server -m"; sleep 2
+  pkill -f "[l]lama-server -m"; sleep 2
   llama-server -m $MODEL --alias storeops-v2-q8_0 --jinja -ngl $ngl -c $(( 8192 * slots )) -np $slots \
     --metrics --host 127.0.0.1 --port 8080 > data/llama-server.log 2>&1 &
   for i in {1..90}; do curl -sf http://127.0.0.1:8080/health >/dev/null && break; sleep 1; done
