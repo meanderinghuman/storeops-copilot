@@ -1,0 +1,46 @@
+{
+  "label": "3b-cpu-2slots",
+  "seconds_per_level": 120.0,
+  "levels": [
+    {
+      "users": 1,
+      "conversations": 5,
+      "errors": 0,
+      "conv_per_s": 0.036,
+      "p50_s": 18.5,
+      "p95_s": 50.75,
+      "mean_s": 27.43,
+      "routes": {
+        "local": 5
+      }
+    },
+    {
+      "users": 2,
+      "conversations": 9,
+      "errors": 0,
+      "conv_per_s": 0.058,
+      "p50_s": 23.4,
+      "p95_s": 66.02,
+      "mean_s": 33.13,
+      "routes": {
+        "local": 9
+      }
+    },
+    {
+      "users": 4,
+      "conversations": 10,
+      "errors": 0,
+      "conv_per_s": 0.058,
+      "p50_s": 63.86,
+      "p95_s": 99.09,
+      "mean_s": 62.38,
+      "routes": {
+        "local": 8,
+        "fallback": 2
+      }
+    }
+  ],
+  "max_users_p95_under_target": 0,
+  "target_p95_s": 10.0,
+  "model": "storeops-3b-q4_k_m"
+}

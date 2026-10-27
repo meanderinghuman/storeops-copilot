@@ -240,27 +240,25 @@ hypothesis at a time led to the changes that mattered most:
 
 ## Performance
 
-Measured on an Apple M5 MacBook Pro (10-core GPU, 24 GB). The served 3B (Q4_K_M) answers a
-conversation in **3.7 s at the median** (p95 9.4 s) on its own. GPU vs CPU, measured with the 1.5B:
-
-| | GPU (Metal) | CPU only |
-| --- | --- | --- |
-| Prompt processing | **3,117 tokens/s** | 104 tokens/s |
-| Generation | **114 tokens/s** | 65 tokens/s |
-| One user, per conversation (p50 / p95) | **1.8 s / 5.4 s** | 6.9 s / 34 s |
-
-Load test with the 1.5B (real test-set questions, concurrent users, 2 minutes per level, zero errors):
+Measured on an Apple M5 MacBook Pro (10-core GPU, 24 GB), with the served 3B (Q4_K_M) behind the
+gateway, escalation off (the laptop's own capacity). Real test-set questions, concurrent users,
+2 minutes per level, zero errors:
 
 | Setup | Users | p50 | p95 | Conversations / s |
 | --- | --- | --- | --- | --- |
-| Metal, 1 slot | 4 | 9.0 s | 16.7 s | 0.42 |
-| **Metal, 4 slots** | **4** | **3.5 s** | **9.3 s** | **0.97** |
-| Metal, 4 slots | 16 | 15.1 s | 31.6 s | 0.98 |
-| CPU only, 2 slots | 4 | 22.7 s | 46.0 s | 0.15 |
+| **Metal, 4 slots** | **1** | **3.1 s** | **7.8 s** | 0.30 |
+| Metal, 4 slots | 4 | 5.9 s | 17.9 s | 0.53 |
+| **Metal, 4 slots** | **8** | 11.4 s | 21.9 s | **0.66** |
+| Metal, 1 slot | 4 | 13.5 s | 28.1 s | 0.28 |
+| CPU only, 2 slots | 1 | 18.5 s | 50.8 s | 0.04 |
 
-With 4 parallel slots a MacBook serves about 1 conversation per second. The system prompt and tool
-schemas (~1,650 tokens) are shared by every request and stay in llama.cpp's prompt cache, which is a
-large part of why local latency stays low.
+One MacBook serves a single manager in ~3 s and up to ~0.66 conversations per second (about 2,400
+an hour) with 4 parallel slots, which double throughput over a single slot. The GPU is ~6× faster
+than CPU-only: prompt processing runs at ~3,100 tokens/s on Metal vs ~100 on the CPU (measured on
+the 1.5B), and every request starts with ~2,000 prompt tokens. Those shared tokens (system prompt
+and tool schemas) stay in llama.cpp's prompt cache, which is a large part of why local latency stays
+low. The 1.5B is ~1.6× faster (about 1 conversation/s at 4 slots) but far less accurate; all runs are
+in [`eval/results/`](eval/results/) (`loadtest_*.json`).
 
 ---
 

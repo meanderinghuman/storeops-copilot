@@ -1,0 +1,69 @@
+{
+  "label": "3b-metal-1slot",
+  "seconds_per_level": 120.0,
+  "levels": [
+    {
+      "users": 1,
+      "conversations": 36,
+      "errors": 0,
+      "conv_per_s": 0.292,
+      "p50_s": 3.06,
+      "p95_s": 7.87,
+      "mean_s": 3.43,
+      "routes": {
+        "local": 36
+      }
+    },
+    {
+      "users": 2,
+      "conversations": 34,
+      "errors": 0,
+      "conv_per_s": 0.275,
+      "p50_s": 7.66,
+      "p95_s": 12.47,
+      "mean_s": 7.17,
+      "routes": {
+        "local": 34
+      }
+    },
+    {
+      "users": 4,
+      "conversations": 36,
+      "errors": 0,
+      "conv_per_s": 0.276,
+      "p50_s": 13.48,
+      "p95_s": 28.08,
+      "mean_s": 13.91,
+      "routes": {
+        "local": 36
+      }
+    },
+    {
+      "users": 8,
+      "conversations": 48,
+      "errors": 0,
+      "conv_per_s": 0.34,
+      "p50_s": 24.46,
+      "p95_s": 35.82,
+      "mean_s": 22.0,
+      "routes": {
+        "local": 48
+      }
+    },
+    {
+      "users": 16,
+      "conversations": 45,
+      "errors": 0,
+      "conv_per_s": 0.271,
+      "p50_s": 50.03,
+      "p95_s": 66.73,
+      "mean_s": 50.23,
+      "routes": {
+        "local": 45
+      }
+    }
+  ],
+  "max_users_p95_under_target": 1,
+  "target_p95_s": 10.0,
+  "model": "storeops-3b-q4_k_m"
+}

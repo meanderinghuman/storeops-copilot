@@ -1,5 +1,5 @@
 {
-  "label": "metal-4slots",
+  "label": "1.5b-metal-4slots",
   "seconds_per_level": 120.0,
   "levels": [
     {
@@ -64,5 +64,6 @@
     }
   ],
   "max_users_p95_under_target": 4,
-  "target_p95_s": 10.0
+  "target_p95_s": 10.0,
+  "model": "storeops-v2-q8_0"
 }
